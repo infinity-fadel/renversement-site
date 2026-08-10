@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------- */
+/* Police Apollo (titres) — voir public/fonts/README.md                   */
+/* Ne fait rien tant que les fichiers ne sont pas fournis : le navigateur  */
+/* retombe silencieusement sur --font-cormorant (Cormorant Garamond,      */
+/* injectée par next/font/google dans app/layout.tsx), un repli premium/  */
+/* éditorial proche des maquettes en attendant les fichiers définitifs.   */
+/* ---------------------------------------------------------------------- */
+@font-face {
+  font-family: "Apollo";
+  src: url("/fonts/Apollo-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Apollo";
+  src: url("/fonts/Apollo-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  --font-apollo: "Apollo", var(--font-cormorant), Georgia, serif;
+  /* --font-montserrat est injecté par next/font/google dans app/layout.tsx */
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Compense le header fixe (Nav.tsx, ~72px) pour tout scroll vers une
+     ancre — clic menu (scrollIntoView), lien #hash ou navigation clavier —
+     sans quoi le haut de chaque section atterrit caché derrière le nav. */
+  scroll-padding-top: 96px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: #000000;
+  color: #efefe8;
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+}
+
+/* Focus visible cohérent avec la charte (accessibilité clavier — §19.1) */
+:focus-visible {
+  outline: 2px solid #f2c94c;
+  outline-offset: 3px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Révélation générique au scroll (pilotée par hooks/useInView.ts)        */
+/* ---------------------------------------------------------------------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Keyframes du globe SVG (components/ui/GlobeSVG.tsx)                    */
+/* ---------------------------------------------------------------------- */
+@keyframes flowfade {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}

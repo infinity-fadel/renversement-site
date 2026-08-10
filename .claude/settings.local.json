@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(brew --version)",
+      "Bash(brew install *)",
+      "Bash(npm -v)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(command -v chromium-cli)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/**)",
+      "Bash(npx --no-install chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(npm ls *)",
+      "Bash(node -e \"require\\('playwright'\\)\")",
+      "Bash(node -e \"require\\('puppeteer'\\)\")",
+      "Bash(npm init *)",
+      "Bash(npx playwright *)",
+      "Bash(lsof -ti:3000 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)",
+      "Bash(disown)",
+      "Bash(timeout 40 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 1; done')",
+      "Bash(curl -sf http://localhost:3000)",
+      "Bash(break)",
+      "Bash(node verify.mjs)",
+      "Bash(node -e ' *)",
+      "Bash(node verify2.mjs)",
+      "Bash(node verify3.mjs)",
+      "Bash(curl -sI --max-time 10 \"https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_lights_2048.png\")",
+      "Bash(curl -sL --max-time 30 -o /Users/Fadel/Downloads/files/renversement-site/public/textures/earth_night_lights.jpg \"https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_lights_2048.png\")",
+      "Bash(node verify_globe.mjs)"
+    ]
+  }
+}
