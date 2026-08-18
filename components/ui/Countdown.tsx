@@ -69,7 +69,16 @@ export default function Countdown({
           : `Temps restant avant la révélation : ${timeLeft.days} jours, ${timeLeft.hours} heures, ${timeLeft.minutes} minutes`
       }
       className="relative mx-auto"
-      style={{ width: RING_SIZE, height: RING_SIZE }}
+      // Le cadran ne peut plus dépasser 38 % de la hauteur du viewport. À
+      // 380 px fixes, la section 08 (titre + texte + cadran + CTA + mention)
+      // débordait de l'écran sur les portables bas : le cadran descendait dans
+      // la bande où GlobeBackground fait dépasser l'arc terrestre, et « 44
+      // JOURS » se retrouvait posé sur la Terre. RING_SIZE reste la taille de
+      // référence du dessin SVG, seul l'affichage est mis à l'échelle.
+      style={{
+        width: `min(${RING_SIZE}px, 38vh)`,
+        height: `min(${RING_SIZE}px, 38vh)`,
+      }}
     >
       {/* Coordonnées décoratives (référence maquette) */}
       <div
@@ -88,10 +97,8 @@ export default function Countdown({
       </div>
 
       <svg
-        width={RING_SIZE}
-        height={RING_SIZE}
         viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-        className="absolute inset-0 -rotate-90"
+        className="absolute inset-0 w-full h-full -rotate-90"
         aria-hidden="true"
       >
         {Array.from({ length: TICK_COUNT }).map((_, i) => {

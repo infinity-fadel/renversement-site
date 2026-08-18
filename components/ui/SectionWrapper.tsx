@@ -34,7 +34,7 @@ export default function SectionWrapper({
       // n'affiche son libellé qu'à partir de `2xl` (voir ce composant : les
       // deux valeurs sont couplées). Elle est symétrique pour ne pas décentrer
       // le contenu — le debrief demande au contraire de recentrer la section 09.
-      className={`reveal min-h-[60vh] md:min-h-screen w-full flex flex-col items-center justify-center px-6 sm:px-12 lg:px-16 2xl:px-80 py-14 sm:py-20 md:py-24 ${className}`}
+      className={`reveal min-h-[60vh] md:min-h-screen w-full flex flex-col items-center justify-center px-6 sm:px-12 lg:px-16 2xl:px-80 py-14 sm:py-20 md:py-24 [@media(max-height:820px)]:py-10 ${className}`}
     >
       {children}
     </section>

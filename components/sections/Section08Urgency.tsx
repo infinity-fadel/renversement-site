@@ -42,13 +42,13 @@ export default function Section08Urgency() {
         La réponse apparaîtra au moment juste.
       </p>
 
-      <div className="mt-14">
+      <div className="mt-14 [@media(max-height:820px)]:mt-6">
         <Countdown />
       </div>
 
       <a
         href="#circle"
-        className="mt-14 inline-block text-xs tracking-widest2 uppercase border border-terracota text-terracota px-8 py-4 hover:bg-terracota hover:text-black transition-colors"
+        className="mt-14 [@media(max-height:820px)]:mt-8 inline-block text-xs tracking-widest2 uppercase border border-terracota text-terracota px-8 py-4 hover:bg-terracota hover:text-black transition-colors"
       >
         Soyez parmi les premiers informés
       </a>

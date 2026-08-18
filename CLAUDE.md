@@ -320,6 +320,29 @@ chevauche le titre de la section 04). Ne pas en changer un sans l'autre.
 La gouttière est symétrique à dessein : le debrief demande par ailleurs de
 recentrer la section 09, donc aucun `pl-` asymétrique ici.
 
+## Écrans bas (hauteur de viewport)
+
+Le globe de fond est en `fixed` : son arc occupe toujours la même bande en bas
+d'écran, quel que soit le scroll. Tout contenu qui descend dans cette bande
+passe donc devant la Terre. Sur les portables bas (≤ 820 px de haut), c'est ce
+qui faisait atterrir « 44 JOURS » sur le globe.
+
+Trois réglages, tous fonction de la **hauteur** du viewport et non de sa
+largeur — les breakpoints Tailwind habituels ne servent à rien ici :
+
+- `HORIZON_VISIBLE_PX` est plafonné par `HORIZON_VISIBLE_VH` (15 %) dans
+  `GlobeBackground.tsx`. Une valeur fixe de 190 px vaut 18 % d'un écran de
+  1080 px mais 25 % d'un écran de 760 px.
+- Le cadran du compte à rebours est plafonné à `38vh` (`Countdown.tsx`).
+  `RING_SIZE` reste la référence du dessin SVG, seul l'affichage est mis à
+  l'échelle via `viewBox` + `w-full h-full`.
+- `SectionWrapper` réduit son rembourrage vertical via la variante arbitraire
+  `[@media(max-height:820px)]:py-10`, et la section 08 resserre ses `mt-14`.
+
+Vérifié à 1280×680, 1440×760, 1500×959 et 1920×1080 : toutes les sections
+tiennent dans le viewport (sauf 07 et 09, qui dépassent de 27 px et 8 px — sans
+conséquence, elles défilent).
+
 ## Images
 
 `public/images/` — visuels du debrief V1, convertis en WebP depuis les PNG

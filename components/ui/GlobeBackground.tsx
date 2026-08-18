@@ -30,7 +30,14 @@ const REST_STATE = { xRatio: 0.74, yRatio: 0.48, scale: 1 };
 // plat).
 const HORIZON_RADIUS_VW = 0.62;
 const HORIZON_RADIUS_MAX_PX = 1400;
+
+// Hauteur de l'arc qui dépasse en bas d'écran. Plafonnée EN PIXELS *et* en
+// fraction de la hauteur du viewport : une valeur fixe de 190 px représente
+// 18 % d'un écran de 1080 px de haut mais 25 % d'un écran de 760 px, et l'arc
+// finissait par remonter dans le cadran du compte à rebours (section 08) sur
+// les écrans bas — « 44 JOURS » se retrouvait posé sur la Terre.
 const HORIZON_VISIBLE_PX = 190;
+const HORIZON_VISIBLE_VH = 0.15;
 
 // La sphère + sa lueur de bord (effet Fresnel) ne remplissent pas tout le
 // canvas 640×640 : il reste une fine marge autour (cf. réglages de
@@ -153,7 +160,8 @@ export default function GlobeBackground() {
         const horizonRadius = Math.min(HORIZON_RADIUS_VW * vw, HORIZON_RADIUS_MAX_PX);
         const horizonScale = (horizonRadius * 2) / (BASE_SIZE * GLOBE_FILL_RATIO);
         const horizonX = vw * 0.5;
-        const horizonY = vh + horizonRadius - HORIZON_VISIBLE_PX;
+        const horizonVisible = Math.min(HORIZON_VISIBLE_PX, vh * HORIZON_VISIBLE_VH);
+        const horizonY = vh + horizonRadius - horizonVisible;
 
         const x = lerp(restX, horizonX, progress);
         const y = lerp(restY, horizonY, progress);
