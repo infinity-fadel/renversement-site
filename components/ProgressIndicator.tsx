@@ -38,8 +38,15 @@ export default function ProgressIndicator() {
                 }`}
               />
             )}
+            {/* Le libellé n'apparaît qu'à partir de `2xl`. En dessous, il
+                débordait sur la colonne de texte des sections (signalé au
+                debrief V1 : « OBSERVER DEPUIS L'AUTRE CÔTÉ » chevauchait le
+                titre de la section 04). Le libellé le plus long atteint ~275 px
+                depuis le bord ; à partir de `2xl`, SectionWrapper réserve
+                `px-80` (320 px) — les deux réglages vont ensemble, ne pas en
+                changer un seul sans recalculer l'autre. */}
             {isActive && (
-              <span className="absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] tracking-widest2 uppercase text-terracota">
+              <span className="hidden 2xl:block absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap text-[10px] tracking-widest2 uppercase text-terracota">
                 {section.progressLabel}
               </span>
             )}

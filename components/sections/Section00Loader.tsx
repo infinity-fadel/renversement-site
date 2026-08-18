@@ -18,8 +18,44 @@ export default function Section00Loader({
   const [progress, setProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const introRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number | undefined>(undefined);
   const isFinishing = useRef(false);
+
+  // Apparition progressive du logo puis du texte (§6.1 — signalé manquant au
+  // debrief V1 : le logo s'affichait d'un bloc, en même temps que tout le
+  // reste). Le logo monte en opacité et se desserre légèrement, les lignes de
+  // texte suivent en cascade. L'état final est celui du HTML par défaut, donc
+  // rien ne disparaît si l'animation ne se joue pas.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const root = introRef.current;
+    if (!root) return;
+
+    const logo = root.querySelector("[data-loader-logo]");
+    const lines = root.querySelectorAll("[data-loader-line]");
+
+    const tl = gsap.timeline();
+    if (logo) {
+      tl.fromTo(
+        logo,
+        { opacity: 0, scale: 0.82 },
+        { opacity: 1, scale: 1, duration: 0.9, ease: "power2.out" }
+      );
+    }
+    if (lines.length) {
+      tl.fromTo(
+        lines,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, stagger: 0.12, ease: "power2.out" },
+        "-=0.45"
+      );
+    }
+
+    return () => {
+      tl.kill();
+    };
+  }, []);
 
   useEffect(() => {
     // Simulation de préchargement — à remplacer par un vrai suivi des
@@ -81,21 +117,33 @@ export default function Section00Loader({
       className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center gap-6"
       style={{ clipPath: "circle(150% at 50% 50%)" }}
     >
-      <Image
-        src="/logo/R-or.png"
-        alt=""
-        aria-hidden="true"
-        width={64}
-        height={64}
-        priority
-        className="w-12 h-12 sm:w-14 sm:h-14"
-      />
-      <p className="font-display text-2xl tracking-widest2 uppercase text-light-grey">
-        {SITE_CONFIG.name}
-      </p>
-      <p className="text-xs tracking-widest2 uppercase text-light-grey/60">
-        Une autre lecture est en cours de chargement
-      </p>
+      <div
+        ref={introRef}
+        className="flex flex-col items-center gap-6"
+      >
+        <Image
+          data-loader-logo
+          src="/logo/R-or.png"
+          alt=""
+          aria-hidden="true"
+          width={64}
+          height={64}
+          priority
+          className="w-12 h-12 sm:w-14 sm:h-14"
+        />
+        <p
+          data-loader-line
+          className="font-display text-2xl tracking-widest2 uppercase text-light-grey"
+        >
+          {SITE_CONFIG.name}
+        </p>
+        <p
+          data-loader-line
+          className="text-xs tracking-widest2 uppercase text-light-grey/60"
+        >
+          Une autre lecture est en cours de chargement
+        </p>
+      </div>
 
       <div className="w-48 sm:w-64 h-px bg-light-grey/20 mt-4 relative overflow-hidden">
         <div

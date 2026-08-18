@@ -31,6 +31,54 @@ const TEXTURE_URL = "/textures/earth_night_lights.png";
 const AUTO_ROTATE_SPEED = 0.00006; // radians / ms, lent et lisible
 const INITIAL_ROTATION_Y = -2.35; // oriente l'Afrique face caméra au chargement (§6.5)
 
+// --- Houle lente de la lueur de bord ---------------------------------------
+// Cycle complet : 6,5 s, soit ~9 respirations par minute. Volontairement très
+// lent — le registre visé est celui d'un corps céleste qui respire, pas d'un
+// pouls. Le halo met ~2,4 s à monter, redescend aussi lentement, puis reste
+// éteint un peu moins de 2 s avant de repartir.
+const PULSE_PERIOD_MS = 6500;
+// Amplitude ajoutée au multiplicateur de la lueur au sommet de la houle.
+const PULSE_AMPLITUDE = 1.2;
+
+// Somme de gaussiennes, en [centre, largeur, poids] sur un cycle normalisé.
+//
+// Deux bosses larges et décalées plutôt qu'une seule : leur chevauchement rend
+// la montée un peu plus vive que la descente, ce qui évite l'effet « sinusoïde »
+// parfaitement symétrique et donne une houle qui respire.
+//
+// Les centres sont volontairement placés vers le milieu du cycle : avec des
+// bosses aussi larges, les centrer tôt laisserait l'enveloppe à une valeur non
+// nulle en t=0 alors qu'elle finit à zéro en t=1 — soit un flash sec à chaque
+// bouclage. Ici l'écart entre les deux extrémités du cycle est de 0,005, donc
+// invisible. Tout déplacement de ces centres doit être revérifié sur ce point.
+const PULSE_BUMPS: Array<[center: number, width: number, weight: number]> = [
+  [0.35, 0.11, 1],
+  [0.55, 0.12, 0.5],
+];
+
+function rawPulse(t: number): number {
+  let sum = 0;
+  for (const [center, width, weight] of PULSE_BUMPS) {
+    sum += weight * Math.exp(-((t - center) * (t - center)) / (2 * width * width));
+  }
+  return sum;
+}
+
+// Les deux bosses se chevauchant, leur somme culmine au-dessus de 1. On ramène
+// le sommet à 1 pour que PULSE_AMPLITUDE reste directement lisible : le pic de
+// `uPulse` vaut toujours 1 + PULSE_AMPLITUDE, quels que soient les réglages
+// ci-dessus.
+const PULSE_PEAK = (() => {
+  let max = 0;
+  for (let i = 0; i <= 200; i++) max = Math.max(max, rawPulse(i / 200));
+  return max;
+})();
+
+/** Enveloppe de la houle sur un cycle normalisé (0 → 1), sommet ramené à 1. */
+function pulseEnvelope(t: number): number {
+  return rawPulse(t) / PULSE_PEAK;
+}
+
 // Rampe de couleur noir chaud → terracota → or, indexée sur la luminance
 // (0-255) du pixel d'origine. Élimine la dominante bleu-gris du fichier
 // NASA pour rester cohérent avec les tokens de marque (terracota #F2C94C).
@@ -44,6 +92,8 @@ const COLOR_RAMP: Array<[number, [number, number, number]]> = [
 export default function GlobeThree({
   active: activeProp,
   size,
+  autoRotate = true,
+  pulseRef,
 }: {
   // Contrôle externe du moment où la scène démarre (utilisé par
   // GlobeBackground.tsx, qui pilote lui-même la visibilité selon le scroll
@@ -54,6 +104,18 @@ export default function GlobeThree({
   // alors visuellement via CSS transform, ex. GlobeBackground). Si omis,
   // retombe sur la taille responsive standard.
   size?: number;
+  // Rotation automatique lente. Désactivée par GlobeBackground depuis le
+  // debrief V1 : les légendes doivent désigner l'Afrique et le reste du monde
+  // (« ICI, LES RESSOURCES » / « AILLEURS, LA VALEUR »), ce qui suppose une
+  // géographie stable sous le texte. Le glisser-déposer reste actif, donc
+  // l'exploration demandée au §6.5 n'est pas perdue.
+  autoRotate?: boolean;
+  // Intensité du battement de la lueur de bord, de 0 (lueur fixe) à 1
+  // (battement pleinement marqué). C'est volontairement une *ref* et non une
+  // prop de valeur : GlobeBackground la recalcule à chaque frame depuis la
+  // position de scroll, et un état React re-rendrait tout le composant 60 fois
+  // par seconde pour rien.
+  pulseRef?: { current: number };
 }) {
   // La scène ne démarre (chargement texture + boucle de rotation) qu'une
   // fois la section réellement visible à l'écran. Sans ça, la rotation
@@ -79,7 +141,13 @@ export default function GlobeThree({
     image.onload = () => {
       if (disposed) return;
       try {
-        cleanup = setupScene(mount, image, setWebglSupported);
+        cleanup = setupScene(
+          mount,
+          image,
+          setWebglSupported,
+          autoRotate,
+          pulseRef
+        );
       } catch {
         setWebglSupported(false);
       }
@@ -94,7 +162,7 @@ export default function GlobeThree({
       cleanup();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, autoRotate]);
 
   if (!webglSupported) return <GlobeSVG />;
 
@@ -121,7 +189,9 @@ export default function GlobeThree({
 function setupScene(
   mount: HTMLDivElement,
   image: HTMLImageElement,
-  setWebglSupported: (v: boolean) => void
+  setWebglSupported: (v: boolean) => void,
+  autoRotate: boolean,
+  pulseRef?: { current: number }
 ): () => void {
   let renderer: THREE.WebGLRenderer;
   try {
@@ -183,7 +253,14 @@ function setupScene(
   // Le rayon reste bien à l'intérieur du cadre de la caméra (z: 6, cf. plus
   // haut), pas de découpe/débordement du cadre carré.
   const glowMaterial = new THREE.ShaderMaterial({
-    uniforms: { glowColor: { value: new THREE.Color(0xfbe8ae) } },
+    uniforms: {
+      glowColor: { value: new THREE.Color(0xfbe8ae) },
+      // Multiplicateur d'intensité piloté depuis la boucle d'animation pour le
+      // battement de cœur. À 1.0 la lueur est celle d'origine ; au-dessus, la
+      // zone où l'intensité n'est pas encore saturée s'élargit et s'éclaircit —
+      // l'anneau paraît donc gonfler, pas seulement changer de couleur.
+      uPulse: { value: 1 },
+    },
     vertexShader: `
       varying vec3 vNormal;
       void main() {
@@ -194,8 +271,9 @@ function setupScene(
     fragmentShader: `
       varying vec3 vNormal;
       uniform vec3 glowColor;
+      uniform float uPulse;
       void main() {
-        float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.5);
+        float intensity = pow(0.6 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.5) * uPulse;
         gl_FragColor = vec4(glowColor, clamp(intensity, 0.0, 1.0));
       }
     `,
@@ -211,14 +289,28 @@ function setupScene(
   let isDragging = false;
   let lastPointerX = 0;
 
-  const animate = () => {
-    if (!isDragging && !prefersReducedMotion) {
+  const animate = (now: number) => {
+    if (autoRotate && !isDragging && !prefersReducedMotion) {
       globeGroup.rotation.y += AUTO_ROTATE_SPEED * 16.7; // ~1 frame @ 60fps
     }
+
+    // Houle de la lueur de bord. `pulseRef` vaut 0 tant que le globe est à sa
+    // taille de repos (section 04) et monte vers 1 à mesure qu'il descend vers
+    // l'horizon en bas de page : la lueur ne se met donc à respirer que
+    // lorsqu'il n'y a plus qu'un arc lumineux à l'écran.
+    const amount = prefersReducedMotion ? 0 : (pulseRef?.current ?? 0);
+    glowMaterial.uniforms.uPulse.value =
+      amount <= 0
+        ? 1
+        : 1 +
+          PULSE_AMPLITUDE *
+            amount *
+            pulseEnvelope((now % PULSE_PERIOD_MS) / PULSE_PERIOD_MS);
+
     renderer.render(scene, camera);
     raf = requestAnimationFrame(animate);
   };
-  animate();
+  raf = requestAnimationFrame(animate);
 
   const dom = renderer.domElement;
   dom.style.touchAction = "none";

@@ -33,7 +33,10 @@ export default function Home() {
       <ProgressIndicator />
 
       <main>
-        <Section02Hero />
+        {/* L'animation d'entrée du hero ne démarre qu'une fois l'écran de
+            chargement levé : sans ça elle se jouait derrière l'overlay et
+            personne ne la voyait (cf. Section02Hero). */}
+        <Section02Hero start={isLoaderDone} />
         <Section03Direction />
         <Section04Observe />
         <Section05Clues />

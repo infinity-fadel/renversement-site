@@ -5,23 +5,47 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
 
 /**
  * Section 07 — Retournez la carte (§6.8)
- * Sur grand écran (référence maquette) : deux cartes côte à côte, chacune
- * indépendamment cliquable/retournable en 3D (§6.8 : "flip 3D à 180° au
- * clic... le contenu masqué ne doit pas rester lisible par le lecteur
- * d'écran"). La carte de gauche démarre sur le message "à financer", celle
- * de droite sur "une vérité" ; retourner l'une révèle le message de
- * l'autre — clin d'œil au thème du renversement, quelle que soit la carte
- * qu'on retourne, on tombe sur l'autre perspective. Sur mobile, une seule
- * carte (les deux ne tiendraient pas côte à côte) reprend le même mécanisme.
+ *
+ * Deux cartes indépendamment retournables en 3D (§6.8 : « flip 3D à 180° au
+ * clic… le contenu masqué ne doit pas rester lisible par le lecteur d'écran »).
+ *
+ * Répartition des textes fixée au debrief V1 : chaque carte porte une
+ * affirmation au recto et son commentaire au verso — auparavant les deux
+ * étaient empilés sur la même face, et le retournement ne révélait rien de
+ * neuf. Les quatre textes sont donc désormais distincts, deux par carte.
  */
-export default function Section07FlipCard() {
-  const [isFlipped, setIsFlipped] = useState(false); // carte mobile
-  const [resetCount, setResetCount] = useState(0); // force le remontage des cartes desktop pour les réinitialiser
+const CARDS: Array<{
+  front: { lead: string; highlight: string };
+  back: { lead: string; highlight?: string; note?: string };
+  Watermark: () => React.JSX.Element;
+}> = [
+  {
+    front: {
+      lead: "L'Afrique est un continent",
+      highlight: "à financer.",
+    },
+    back: {
+      lead: "Une idée répétée depuis",
+      highlight: "des décennies.",
+    },
+    Watermark: AfricaWatermark,
+  },
+  {
+    front: {
+      lead: "Une certitude n'est pas toujours une",
+      highlight: "vérité.",
+    },
+    back: {
+      lead: "C'est parfois une manière de regarder que personne ne",
+      highlight: "questionne plus.",
+    },
+    Watermark: ArcWatermark,
+  },
+];
 
-  const resetAll = () => {
-    setIsFlipped(false);
-    setResetCount((c) => c + 1);
-  };
+export default function Section07FlipCard() {
+  // Force le remontage des cartes pour les réinitialiser toutes d'un coup.
+  const [resetCount, setResetCount] = useState(0);
 
   return (
     <SectionWrapper id="flip" className="text-center relative overflow-hidden">
@@ -38,9 +62,9 @@ export default function Section07FlipCard() {
       </p>
       <span aria-hidden="true" className="w-10 h-px bg-terracota/40 mt-6 mb-10" />
 
-      {/* Desktop : deux cartes indépendamment retournables (référence maquette) */}
-      <div className="hidden md:flex items-center gap-6 lg:gap-10">
-        <FlippableCard key={`front-${resetCount}`} initialVariant="front" />
+      {/* Les deux cartes : côte à côte dès `md`, empilées en dessous. */}
+      <div className="flex flex-col md:flex-row items-center gap-10 md:gap-6 lg:gap-10">
+        <FlippableCard key={`a-${resetCount}`} card={CARDS[0]} />
 
         <span
           aria-hidden="true"
@@ -49,66 +73,7 @@ export default function Section07FlipCard() {
           <DoubleArrowIcon />
         </span>
 
-        <FlippableCard key={`back-${resetCount}`} initialVariant="back" />
-      </div>
-
-      {/* Mobile : carte unique qui se retourne */}
-      <div
-        className="relative md:hidden w-72 h-80"
-        style={{ perspective: "1400px" }}
-      >
-        <span
-          aria-hidden="true"
-          className="absolute -top-2 -left-2 w-5 h-5 border-t border-l border-terracota/60"
-        />
-        <span
-          aria-hidden="true"
-          className="absolute -bottom-2 -right-2 w-5 h-5 border-b border-r border-terracota/60"
-        />
-
-        <button
-          type="button"
-          onClick={() => setIsFlipped((v) => !v)}
-          aria-pressed={isFlipped}
-          aria-label={
-            isFlipped
-              ? "Face arrière affichée — cliquer pour revenir à la face avant"
-              : "Face avant affichée — cliquer pour retourner la carte"
-          }
-          className="relative w-full h-full text-left rounded-sm"
-          style={{
-            transformStyle: "preserve-3d",
-            transition: "transform 0.8s cubic-bezier(0.16,1,0.3,1)",
-            transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-          }}
-        >
-          <div
-            aria-hidden={isFlipped}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 border border-terracota/50 bg-black/60 px-8 overflow-hidden rounded-sm"
-            style={{
-              backfaceVisibility: "hidden",
-              boxShadow: "0 0 30px -8px rgba(242,201,76,0.35)",
-            }}
-          >
-            <AfricaWatermark />
-            <FrontFaceContent />
-            <span className="mt-4 font-display text-xl text-terracota">R</span>
-          </div>
-
-          <div
-            aria-hidden={!isFlipped}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-4 border border-terracota bg-black px-8 overflow-hidden rounded-sm"
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-              boxShadow: "0 0 30px -6px rgba(242,201,76,0.5)",
-            }}
-          >
-            <ArcWatermark />
-            <BackFaceContent />
-            <span className="mt-4 font-display text-xl text-terracota">R</span>
-          </div>
-        </button>
+        <FlippableCard key={`b-${resetCount}`} card={CARDS[1]} />
       </div>
 
       <div className="mt-14 flex flex-col sm:flex-row gap-8 sm:gap-14">
@@ -126,7 +91,7 @@ export default function Section07FlipCard() {
           icon={<RefreshIcon />}
           title="Recommencer"
           description="Revenir à la première face."
-          onClick={resetAll}
+          onClick={() => setResetCount((c) => c + 1)}
         />
       </div>
 
@@ -136,49 +101,12 @@ export default function Section07FlipCard() {
       >
         Continuer l&apos;expérience
       </a>
-
     </SectionWrapper>
   );
 }
 
-function FrontFaceContent() {
-  return (
-    <>
-      <p className="font-display text-lg sm:text-xl uppercase text-light-grey leading-snug">
-        L&apos;Afrique est un continent{" "}
-        <span className="text-terracota">à financer.</span>
-      </p>
-      <p className="text-xs text-light-grey/50">
-        Une idée répétée depuis des décennies.
-      </p>
-    </>
-  );
-}
-
-function BackFaceContent() {
-  return (
-    <>
-      <p className="font-display text-lg sm:text-xl uppercase text-light-grey leading-snug">
-        Une certitude n&apos;est pas toujours une{" "}
-        <span className="text-terracota">vérité.</span>
-      </p>
-      <span aria-hidden="true" className="w-8 h-px bg-terracota/40" />
-      <p className="text-xs text-terracota/80 max-w-[14rem]">
-        C&apos;est parfois une manière de regarder que personne ne
-        questionne plus.
-      </p>
-    </>
-  );
-}
-
-/**
- * Carte desktop indépendamment retournable en 3D. `initialVariant` fixe la
- * face visible au repos ; l'autre face (révélée au clic) affiche
- * automatiquement le contenu opposé.
- */
-function FlippableCard({ initialVariant }: { initialVariant: "front" | "back" }) {
+function FlippableCard({ card }: { card: (typeof CARDS)[number] }) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const backVariant = initialVariant === "front" ? "back" : "front";
 
   return (
     <div
@@ -200,7 +128,7 @@ function FlippableCard({ initialVariant }: { initialVariant: "front" | "back" })
         aria-pressed={isFlipped}
         aria-label={
           isFlipped
-            ? "Autre perspective affichée — cliquer pour revenir à la face initiale"
+            ? "Verso affiché — cliquer pour revenir au recto"
             : "Cliquer pour retourner la carte"
         }
         className="relative w-full h-full text-left rounded-sm"
@@ -210,15 +138,20 @@ function FlippableCard({ initialVariant }: { initialVariant: "front" | "back" })
           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >
-        <CardFace
-          variant={initialVariant}
-          hidden={isFlipped}
-          rotated={false}
-        >
-          {initialVariant === "front" ? <FrontFaceContent /> : <BackFaceContent />}
+        <CardFace variant="front" hidden={isFlipped} rotated={false}>
+          <card.Watermark />
+          <p className="font-display text-lg sm:text-xl uppercase text-light-grey leading-snug">
+            {card.front.lead}{" "}
+            <span className="text-terracota">{card.front.highlight}</span>
+          </p>
         </CardFace>
-        <CardFace variant={backVariant} hidden={!isFlipped} rotated>
-          {backVariant === "front" ? <FrontFaceContent /> : <BackFaceContent />}
+
+        <CardFace variant="back" hidden={!isFlipped} rotated>
+          <card.Watermark />
+          <p className="font-display text-lg sm:text-xl uppercase text-light-grey leading-snug">
+            {card.back.lead}{" "}
+            <span className="text-terracota">{card.back.highlight}</span>
+          </p>
         </CardFace>
       </button>
 
@@ -262,7 +195,6 @@ function CardFace({
             : "0 0 30px -6px rgba(242,201,76,0.5)",
       }}
     >
-      {variant === "front" ? <AfricaWatermark /> : <ArcWatermark />}
       {children}
       <span aria-hidden="true" className="mt-4 font-display text-xl text-terracota">
         R

@@ -31,33 +31,47 @@ export const SITE_URL = `https://${SITE_DOMAIN}`;
 export const SITE_TIMEZONE = "Africa/Abidjan";
 
 // ---------------------------------------------------------------------------
-// 3. COMPTE À REBOURS — 120 heures (5 jours), calculées en heure d'Abidjan
+// 3. COMPTE À REBOURS — jusqu'au Jour J, en heure d'Abidjan
 // ---------------------------------------------------------------------------
 //
-// Deux façons de piloter la date cible :
+// Date de révélation validée (debrief client V1) : 2 octobre 2026.
+// Abidjan étant UTC+0 toute l'année, l'heure ISO en "Z" EST l'heure locale
+// d'Abidjan — aucune conversion à faire.
 //
-// A) Date fixe (recommandé dès que la date de révélation est validée) :
-//    définir NEXT_PUBLIC_LAUNCH_DATE_ISO="2026-08-15T09:00:00Z"
-//    (Abidjan étant UTC+0, l'heure ISO en "Z" correspond directement
-//    à l'heure locale d'Abidjan — aucune conversion à faire)
+// Cette valeur est volontairement codée ici comme valeur par défaut, et non
+// laissée à une variable d'environnement seule : la date est publique et
+// figée, et le site doit afficher le bon décompte même si la variable n'est
+// pas configurée chez l'hébergeur. NEXT_PUBLIC_LAUNCH_DATE_ISO reste
+// prioritaire si elle est définie (utile pour tester la bascule à zéro).
 //
-// B) Fenêtre glissante de 120h (mode par défaut tant que la date n'est
-//    pas figée) : la cible est calculée comme "maintenant + 120h" au
-//    premier chargement du serveur, puis figée en config statique.
-//
-const COUNTDOWN_DURATION_HOURS = 120;
+// NB : l'ancien défaut « maintenant + 120 h » a été retiré — il produisait
+// une cible différente entre le build (serveur) et le chargement de page
+// (client), donc un décompte incohérent et une erreur d'hydratation React.
+const DEFAULT_LAUNCH_ISO = "2026-10-02T00:00:00Z";
 
-function computeDefaultLaunchDate(): Date {
-  const now = new Date();
-  return new Date(now.getTime() + COUNTDOWN_DURATION_HOURS * 60 * 60 * 1000);
-}
+export const LAUNCH_DATE: Date = new Date(
+  process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO ?? DEFAULT_LAUNCH_ISO
+);
 
-export const LAUNCH_DATE: Date = process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO
-  ? new Date(process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO)
-  : computeDefaultLaunchDate();
+// Début de la campagne de teasing — sert uniquement à donner une échelle à
+// l'anneau de progression du compte à rebours (§6.9). Sans lui, l'anneau
+// était calé sur une fenêtre fixe de 120 h : avec une révélation à plus de
+// 40 jours, il serait resté plein et parfaitement immobile pendant des
+// semaines, puis n'aurait bougé que dans les 5 derniers jours.
+const DEFAULT_CAMPAIGN_START_ISO = "2026-08-17T00:00:00Z";
+
+export const CAMPAIGN_START_DATE: Date = new Date(
+  process.env.NEXT_PUBLIC_CAMPAIGN_START_ISO ?? DEFAULT_CAMPAIGN_START_ISO
+);
+
+const COUNTDOWN_DURATION_HOURS = Math.max(
+  1,
+  (LAUNCH_DATE.getTime() - CAMPAIGN_START_DATE.getTime()) / (1000 * 60 * 60)
+);
 
 export const COUNTDOWN_CONFIG = {
   targetDate: LAUNCH_DATE,
+  startDate: CAMPAIGN_START_DATE,
   timezone: SITE_TIMEZONE,
   durationHours: COUNTDOWN_DURATION_HOURS,
 };

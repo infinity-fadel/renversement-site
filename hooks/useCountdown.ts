@@ -32,14 +32,22 @@ function getTimeLeft(target: Date): TimeLeft {
   return { days, hours, minutes, seconds, totalMs, isExpired: totalMs === 0 };
 }
 
-export function useCountdown(targetDate: Date = COUNTDOWN_CONFIG.targetDate) {
-  // Rendu initial neutre (SSR-safe) puis hydratation côté client
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(() =>
-    getTimeLeft(targetDate)
-  );
+/**
+ * Renvoie `null` tant que le composant n'est pas monté côté client.
+ *
+ * La page est prérendue en statique : le HTML est figé au moment du build.
+ * Appeler `Date.now()` dès le premier rendu ferait donc diverger le HTML
+ * servi (heure du build) et le premier rendu client (heure de la visite) —
+ * un écart qui peut atteindre plusieurs jours, et une erreur d'hydratation
+ * React garantie. On ne calcule le temps restant qu'après le montage ; aux
+ * appelants d'afficher un gabarit stable en attendant (cf. Countdown.tsx).
+ */
+export function useCountdown(
+  targetDate: Date = COUNTDOWN_CONFIG.targetDate
+): TimeLeft | null {
+  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
 
   useEffect(() => {
-    // Se resynchronise immédiatement au montage (au cas où le SSR ait un léger décalage)
     setTimeLeft(getTimeLeft(targetDate));
 
     const interval = setInterval(() => {

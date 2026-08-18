@@ -1,166 +1,330 @@
 # CLAUDE.md
 
-Ce fichier fournit des indications à Claude Code (claude.ai/code) pour travailler avec le code de ce dépôt.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Projet
 
-« RENVERSEMENT » — un site teaser Next.js « coming soon » (V1) en français,
-pour le lancement d'un livre/d'une campagne. Expérience one-page en scroll
-composée de 12 sections numérotées (00 → 11), d'un compte à rebours et d'un
-formulaire d'inscription par e-mail. Le contenu, les textes et le comportement
-sont pilotés par un document de spécification externe désigné dans le code
-comme « le cahier des charges » (références `§` dans les commentaires, ex.
-`§6.10`, `§16.3`) — ces commentaires citant les sections du cahier des charges
-sont volontaires (traçabilité), ce ne sont pas des scories.
+« RENVERSEMENT » — site teaser Next.js « coming soon » (V1) en français, pour
+le lancement d'un livre/d'une campagne. Expérience one-page en scroll,
+sections numérotées 00 → 11, compte à rebours et formulaire d'inscription.
 
-Le projet est en français pour le contenu, les commentaires et les textes —
-garder ce choix pour tout nouveau code/commentaire.
+Le contenu, les textes et les comportements sont pilotés par un cahier des
+charges. **Les deux documents de référence sont dans le dépôt**, dans
+[source/](source/) :
+
+- `source/Cahier_des_charges_Site_RENVERSEMENT_V1.pdf` — les références `§`
+  omniprésentes dans les commentaires (`§6.10`, `§16.3`…) pointent vers ses
+  sections. Ces commentaires sont volontaires (traçabilité), pas des scories.
+- `source/Brand Guidelines Renversement .pdf` — source des tokens de
+  `tailwind.config.ts` (attention à l'espace avant `.pdf` dans le nom).
+
+Les lire avant de trancher une question de contenu, de texte ou de charte
+plutôt que d'inventer — la formulation exacte des textes est validée et ne
+doit pas être paraphrasée.
+
+Le projet est en français (contenu, commentaires, textes) — garder ce choix
+pour tout nouveau code.
 
 ## Commandes
 
 ```bash
 npm install
 cp .env.example .env.local   # puis renseigner NEXT_PUBLIC_SITE_DOMAIN
-npm run dev                  # serveur de dev
-npm run build                # build de production
-npm run start                # sert le build de production
-npm run lint                 # next lint
+npm run dev
+npm run build                # compile ET vérifie les types
+npm run start
+npx tsc --noEmit             # vérification de types seule (rapide)
 ```
 
-Il n'y a pas de suite de tests configurée dans ce dépôt.
+**`npm run lint` ne fonctionne pas en l'état** : le dépôt ne contient aucune
+config ESLint (pas de `.eslintrc*` ni `eslint.config.*`), donc `next lint`
+s'arrête sur un prompt interactif « How would you like to configure ESLint? »
+et bloque toute exécution non interactive. Utiliser `npx tsc --noEmit` (ou
+`npm run build`) comme filet de sécurité. `next lint` est par ailleurs
+déprécié en Next 15 et supprimé en Next 16 — si le linting devient
+nécessaire, migrer vers l'ESLint CLI plutôt que réparer `next lint`.
+
+Aucune suite de tests n'est configurée.
+
+`tsconfig.tsbuildinfo` est versionné alors que c'est un artefact de build : il
+apparaîtra modifié après chaque `build`/`tsc`. Ne pas committer ce bruit
+(idéalement, l'ajouter à `.gitignore` et le déversionner).
 
 ## Architecture
 
-**Composition one-page** : [app/page.tsx](app/page.tsx) est un composant
-client qui rend les 12 sections dans un ordre fixe à l'intérieur de `<main>`,
-plus `Nav`, `ProgressIndicator` et l'écran de chargement en overlay. Il n'y a
-pas de routing — c'est un site à page unique.
+### Composition
 
-**Les sections sont la source de vérité du contenu** : chaque section
-numérotée (`components/sections/Section0XNom.tsx`) est autonome, avec son
-texte français codé en dur dans le composant (texte validé issu du cahier des
-charges, pas destiné à venir d'un CMS/i18n). La numérotation (00–11) suit le
-cahier des charges et n'est pas séquentielle dans les imports de fichiers
-(ex. la section « 01 » n'existe pas en tant que fichier — voir ci-dessous).
+[app/page.tsx](app/page.tsx) rend tout dans un ordre fixe : deux fonds de page
+persistants, le loader en overlay conditionnel, `Nav`, `ProgressIndicator`,
+les sections 02→10 dans `<main>`, puis le footer hors de `<main>`. Pas de
+routing — site à page unique.
 
-**`config/sections.config.ts` est le registre unique des métadonnées de
-section** (id, numéro affiché, libellé de menu, flag `inNav`, `navOrder`,
-`progressLabel`). Il pilote trois éléments d'UI indépendants qui doivent
-rester synchronisés : les liens du menu de navigation, l'indicateur latéral
-de progression, et (indirectement) les cibles de l'IntersectionObserver de
-`useActiveSection`. Pour ajouter/retirer/réordonner une section, modifier ce
-fichier — ne pas dupliquer la liste des sections ailleurs. Note : « Section01 »
-(Nav) et « Section02Hero », etc., sont numérotés selon le cahier des charges,
-pas selon l'ordre du tableau.
+`page.tsx` porte `"use client"`, donc **tout ce qu'il importe finit dans le
+bundle client**, y compris les sections sans directive `"use client"` en tête
+de fichier (04, 08, 10, 11). [app/layout.tsx](app/layout.tsx) est le seul vrai
+Server Component. Ne pas déduire de l'absence de `"use client"` qu'un
+composant est rendu côté serveur.
 
-Le menu (`Nav.tsx`) suit désormais exactement le §6.2 du cahier des charges :
-5 liens (Le Renversement, Les indices, La bascule, Le Cercle, Compte à
-rebours), triés par `navOrder` — un champ distinct de l'ordre du tableau
-`SECTIONS` (qui reste l'ordre réel du parcours 00→11) car le menu et le
-parcours n'ont pas le même ordre (ex. "Le Cercle" est listé avant "Compte à
-rebours" alors que la section 08 précède la section 09). `ProgressIndicator`
-utilise `progressLabel` (titres courts repris du tableau §5) pour afficher le
-libellé à côté du numéro de la section active ; il est passé à gauche de
-l'écran (référence maquette), pas à droite.
+La page entière est prérendue en statique (`○ (Static)` au build) — le HTML
+servi est donc figé **au moment du build**, pas à la requête. Conséquence
+directe sur le compte à rebours, voir « Déterminisme d'hydratation ».
 
-**`config/site.config.ts` centralise tout ce qui est susceptible de changer
-avant/pendant le lancement** (domaine, date de lancement, feature flags,
-taglines), afin que les composants n'aient jamais ces valeurs en dur — ils les
-importent depuis ce fichier. Points clés :
-- `SITE_DOMAIN` lit `NEXT_PUBLIC_SITE_DOMAIN`, avec `renversement.africa` en
-  valeur de repli.
-- `LAUNCH_DATE` lit `NEXT_PUBLIC_LAUNCH_DATE_ISO` (chaîne ISO en UTC) ; si non
-  définie, elle vaut par défaut « maintenant + 120h », calculée une seule fois
-  au démarrage du serveur — ce défaut n'est PAS stable entre redémarrages/
-  déploiements, donc toujours définir la variable d'environnement au-delà du
-  dev local.
-- `SITE_TIMEZONE` vaut `Africa/Abidjan`, qui est UTC+0 toute l'année (pas de
-  DST) — c'est pourquoi le calcul du compte à rebours dans
-  `hooks/useCountdown.ts` traite les timestamps UTC et l'heure d'Abidjan comme
-  directement comparables, sans conversion.
-- `SITE_CONFIG.features` contient de simples flags booléens (`countdown`,
-  `globe`, et `commerce`/`payment` réservés à la V2, actuellement désactivés)
-  pour activer/désactiver des fonctionnalités sans redéploiement de logique.
+### Registre des sections
 
-**La stratégie d'animation est en deux couches** :
-`hooks/useInView.ts` + `components/ui/SectionWrapper.tsx` fournissent un
-fade/slide-in au scroll générique, sans dépendance (basé sur
-IntersectionObserver, respecte `prefers-reduced-motion`, révèle une seule
-fois) — c'est le socle utilisé par la majorité des sections. GSAP
-(+ ScrollTrigger, enregistré une seule fois dans `lib/gsap.ts`) est branché
-par-dessus pour les animations spécifiques explicitement demandées par le
-cahier des charges :
-- `Section00Loader.tsx` — transition de sortie en ouverture circulaire
-  (`clip-path: circle()` animé) vers la section 01/02.
-- `Section02Hero.tsx` — révélation du titre mot par mot par masque
-  (`overflow-hidden` + translation) et phrase secondaire qui apparaît
-  inversée à 180° puis se stabilise, déclenchées une seule fois via
-  `useInView`.
-- `Section03Direction.tsx` — rotation continue 0→180° de l'élément central
-  pilotée par le scroll (`ScrollTrigger` en mode `scrub`), GSAP possédant
-  seul la transformation CSS via une ref DOM directe pour éviter tout
-  conflit avec le rendu déclaratif de React pendant le scrub. Le bouton
-  reste une alternative pleinement fonctionnelle au clavier/tactile (exigé
-  par §6.4), et pilote la même ref via `gsap.to`.
+`config/sections.config.ts` est la source unique des métadonnées de section
+(id, numéro affiché, `navLabel`, `inNav`, `navOrder`, `progressLabel`). Il
+pilote le menu, l'indicateur de progression et les cibles de
+l'IntersectionObserver de `useActiveSection`. Pour ajouter/retirer/réordonner
+une section, modifier ce fichier — ne jamais dupliquer la liste ailleurs.
 
-Toutes ces animations GSAP se désactivent si `prefers-reduced-motion: reduce`
-est détecté (vérifié explicitiement dans chaque composant, pas seulement via
-CSS) et retombent sur l'état final déjà présent dans le HTML par défaut.
+Deux pièges de numérotation :
 
-**Le globe de la section 04 est en Three.js** (`components/ui/GlobeThree.tsx`),
-texturé avec une image "Terre de nuit" du domaine public (NASA Black Marble,
-reprise des exemples officiels three.js) stockée dans
-`public/textures/earth_night_lights.png`. Chargé via `next/dynamic` avec
-`ssr: false` (WebGL exige `window`/`canvas`, indisponible côté serveur) et un
-`loading:` qui rend `GlobeSVG` pendant le chargement du chunk — donc pas de
-saut de mise en page et une dégradation progressive si JS est indisponible.
-`GlobeThree` lui-même retombe sur `<GlobeSVG />` si `WebGLRenderer` échoue à
-s'instancier (§8.3 : "dégradation gracieuse si WebGL n'est pas disponible").
-Respecte `prefers-reduced-motion` en figeant la rotation plutôt qu'en
-supprimant le rendu 3D. `GlobeSVG.tsx` (SVG pur, zéro dépendance) reste donc
-dans le code comme fallback fonctionnel, pas comme code mort.
+- Le tableau `SECTIONS` compte **11 entrées**, pas 12 : la « section 01 »
+  est la navigation (`Nav.tsx`), qui n'a pas d'ancre propre et ne figure donc
+  pas dans le registre. Les « 12 sections » des docs comptent le nav.
+- `navOrder` pilote l'ordre du menu, distinct par construction de l'ordre du
+  parcours. Depuis le debrief V1 les deux coïncident (« Compte à rebours »
+  est repassé devant « Le Cercle », à rebours du §6.2 du cahier des charges) —
+  le champ est conservé parce qu'il reste le seul point de réglage du menu.
+  `Nav.tsx` trie par `navOrder`, `ProgressIndicator` suit l'ordre du tableau.
 
-**Le formulaire de la section 09 (Le Cercle) est fonctionnel côté UI mais sans
-backend** : il poste vers `/api/subscribe`, qui n'existe pas encore (pas de
-dossier `app/api/`). Le composant gère déjà les états
-`idle/submitting/success/error/duplicate`, avec une convention 409 = doublon —
-lors de l'implémentation du route handler, respecter ce contrat de code de
-statut plutôt que de modifier le client.
+`useActiveSection` est appelé indépendamment par `Nav` et par
+`ProgressIndicator` : deux IntersectionObserver distincts observent les mêmes
+éléments. Voulu (chaque composant reste autonome), à ne pas confondre avec un
+doublon accidentel.
 
-**Polices** : Montserrat est chargée via `next/font/google` dans
-`app/layout.tsx` (texte courant). La police de titre « Apollo » est une
-police premium/custom pas encore présente — voir
-[public/fonts/README.md](public/fonts/README.md). Elle est branchée via un
-`@font-face` classique dans `app/globals.css` (pas `next/font/local`), pour
-que le build ne casse pas tant que les fichiers de police sont absents. En
-attendant, la cascade `--font-apollo` (globals.css) retombe sur Cormorant
-Garamond (`next/font/google`, variable `--font-cormorant`, chargée dans
-`app/layout.tsx`) plutôt que directement sur `serif` — un repli premium
-visuellement proche des maquettes du cahier des charges. Une fois les
-fichiers Apollo ajoutés, Apollo prend automatiquement le dessus dans la
-cascade sans aucune autre modification ; migrer vers `next/font/local` reste
-la suite recommandée à ce moment-là.
+### Configuration de lancement
 
-**Tokens de design** dans `tailwind.config.ts` sont issus directement de
-`Brand_Guidelines_Renversement.pdf` (absent de ce dépôt) — couleurs
-(`terracota`, `black`, `light-grey`, `granite`, `lavender`, `desert-sand`) et
-le système à deux polices (`font-display` = Apollo/serif, `font-body` =
-Montserrat). Traiter ces noms/valeurs comme des tokens de marque fixes, pas
-des choix arbitraires.
+`config/site.config.ts` centralise ce qui change avant/pendant le lancement
+(domaine, date, feature flags, taglines) — les composants importent d'ici,
+jamais de valeurs en dur.
 
-## Manques connus (voir README.md pour la liste complète)
+- `SITE_DOMAIN` ← `NEXT_PUBLIC_SITE_DOMAIN`, repli `renversement.africa`.
+- `LAUNCH_DATE` — **2 octobre 2026** (date validée au debrief V1), codée en
+  dur comme valeur par défaut et surchargeable par
+  `NEXT_PUBLIC_LAUNCH_DATE_ISO`. Elle est volontairement dans le code et non
+  dans la seule variable d'environnement : la date est publique et figée, et le
+  site doit décompter juste même sans configuration chez l'hébergeur.
+- `CAMPAIGN_START_DATE` ← `NEXT_PUBLIC_CAMPAIGN_START_ISO`, défaut
+  2026-08-17. Sert **uniquement** d'échelle à l'anneau de progression du
+  compte à rebours : `durationHours` en est dérivé. Sans cette notion, l'anneau
+  restait calé sur une fenêtre fixe de 120 h et, avec une révélation à plus de
+  40 jours, serait resté plein et immobile pendant des semaines.
+- `SITE_TIMEZONE` = `Africa/Abidjan`, UTC+0 toute l'année (pas de DST) — d'où
+  le fait que `hooks/useCountdown.ts` compare directement des timestamps UTC
+  sans conversion.
+- `SITE_CONFIG.features` — flags booléens (`countdown`, `globe` actifs ;
+  `commerce`, `payment` réservés V2, désactivés).
 
-- Endpoint `/api/subscribe` + intégration CRM/emailing non implémentés.
+### Déterminisme d'hydratation
+
+Contrainte transverse, à respecter dans tout nouveau code : le HTML prérendu
+et le premier rendu client doivent être identiques au caractère près. Trois
+mécanismes existants en découlent, à ne pas « simplifier » :
+
+- `Countdown.tsx` et `Section05Clues.tsx` arrondissent les résultats de
+  `Math.cos`/`Math.sin` à 3 décimales — le dernier bit peut différer entre V8
+  (build) et JavaScriptCore (Safari), ce qui suffit à casser l'hydratation sur
+  des coordonnées SVG codées en dur.
+- `StarfieldBackground.tsx` génère les positions d'étoiles par une formule
+  déterministe, jamais `Math.random()`.
+
+Ne jamais introduire `Date.now()`, `Math.random()` ou une valeur dépendante du
+navigateur dans un rendu initial ; les reporter dans un `useEffect`.
+
+### Animations — deux couches
+
+**Socle sans dépendance** : `hooks/useInView.ts` + `components/ui/SectionWrapper.tsx`
+fournissent le fade/slide-in au scroll (IntersectionObserver, révélation
+unique, `prefers-reduced-motion` respecté). `SectionWrapper` fournit aussi
+l'`id` d'ancre et le `min-h-screen`. Section 00 (overlay) et section 11
+(footer non animé, §6.12) s'en passent volontairement.
+
+**GSAP par-dessus** (enregistré une seule fois dans `lib/gsap.ts`), pour les
+cas explicitement demandés par le cahier des charges — **5 sections** :
+
+| Section | Animation |
+|---|---|
+| `Section00Loader` | Apparition progressive du logo puis des lignes, et sortie en ouverture circulaire (`clip-path: circle()`) |
+| `Section02Hero` | Titre révélé mot par mot par masque — déclenché par la prop `start`, pas par un observateur (voir plus bas) |
+| `Section03Direction` | Rotation 0→180° pilotée par le scroll, **par paliers de 20°** (`ScrollTrigger` + `gsap.to` à chaque cran) |
+| `Section05Clues` | Entrée séquentielle des cartes + tracé progressif des anneaux de pourcentage |
+| `Section06Shift` | Flash d'opacité par ligne à l'activation + révélation de la phrase de conclusion |
+| `Section10Final` | Halo de lumière puis apparition lente du texte (timeline > 3 s) |
+
+**Deux pièges de déclenchement, corrigés au debrief V1 — ne pas les
+réintroduire :**
+
+- `Section02Hero` est monté dès le premier rendu et se trouve déjà dans le
+  viewport : un `useInView` s'y déclenchait immédiatement, donc l'animation se
+  jouait **sous l'overlay du loader** et était terminée quand il se levait.
+  Elle est désormais commandée par `start`, passé par `app/page.tsx` à la fin
+  du loader. Toute animation d'ouverture de cette section doit suivre la même
+  voie.
+- Ne jamais attacher le `ref` de `useInView` à un élément
+  `className="contents"` : `display: contents` ne génère aucune boîte, le
+  rectangle observé est vide et le seuil n'est jamais atteint — l'animation ne
+  part alors jamais. C'était le cas dans les sections 02 et 05.
+
+Deux règles suivies partout : l'**état final est déjà le rendu HTML par
+défaut** (GSAP ne joue que l'entrée, jamais le contenu lisible), et chaque
+composant teste `prefers-reduced-motion` **en JS** et sort avant d'animer —
+pas seulement via le CSS de `globals.css`.
+
+Section 03 : GSAP possède seul la transformation CSS via une ref DOM directe,
+pour éviter tout conflit avec React pendant le scrub. Le bouton reste une
+alternative clavier/tactile pleinement fonctionnelle (§6.4) et pilote la même
+ref.
+
+Section 07 (flip de carte) est en CSS pur (`transformStyle: preserve-3d`),
+sans GSAP.
+
+### Globe — architecture à deux rendus
+
+Point le plus contre-intuitif du projet. Il y a **deux** points de montage
+pour le même composant `GlobeThree` :
+
+1. **Desktop** — `components/ui/GlobeBackground.tsx`, monté au niveau de
+   `page.tsx` : globe en fond de page persistant (`fixed`, `-z-10`,
+   `hidden md:block`), dont la taille et la position sont recalculées à chaque
+   frame selon le scroll. Il part de l'état « repos » (place du globe en
+   section 04), puis grossit et glisse vers le bas pour ne plus laisser
+   dépasser qu'un arc en bas d'écran (« horizon ») sur toutes les sections
+   suivantes. Réversible. Les légendes (§6.5) sont portées par ce composant et
+   s'effacent quand le globe grossit.
+2. **Mobile** — plus de globe du tout. Le debrief V1 demande explicitement de
+   le masquer sur petit écran ; `Section04Observe.tsx` n'y affiche que les
+   trois légendes. Conséquence utile : `three.js` ne part plus jamais dans le
+   bundle mobile, puisque seul `GlobeBackground` (déjà `hidden md:block`) le
+   charge, en `next/dynamic`.
+
+`GlobeThree` accepte `active` (contrôle externe du démarrage, utilisé par
+`GlobeBackground`), `size` (canvas à taille fixe, agrandi ensuite par
+`transform: scale` CSS), `autoRotate` et `pulseRef`. Sans ces props il est
+autonome et démarre à l'entrée dans le viewport.
+
+**Houle de la lueur** : à l'état horizon, le liseré Fresnel respire lentement
+(cycle de 6,5 s, ~9 par minute — registre « corps céleste », pas pouls).
+`pulseEnvelope` somme deux gaussiennes larges et décalées : leur chevauchement
+rend la montée plus vive que la descente, ce qui évite la symétrie molle d'une
+sinusoïde. Elle pilote l'uniform `uPulse` du shader, qui multiplie l'intensité
+**avant** le `clamp` : la zone non saturée s'élargit, donc l'anneau paraît
+gonfler et pas seulement changer de teinte (mesuré : ×1,97 entre creux et pic).
+
+Deux pièges si on retouche `PULSE_BUMPS` :
+
+- Les centres sont placés vers le milieu du cycle **exprès**. Des bosses aussi
+  larges centrées tôt laissent l'enveloppe à une valeur non nulle en `t=0`
+  alors qu'elle finit à zéro en `t=1` — soit un flash sec à chaque bouclage.
+  L'écart actuel entre les deux extrémités est de 0,005. À revérifier après
+  tout déplacement.
+- La somme est normalisée par `PULSE_PEAK` pour que le sommet de `uPulse` reste
+  exactement `1 + PULSE_AMPLITUDE` quels que soient les réglages.
+
+`pulseRef` est **une ref, pas une prop de valeur** : `GlobeBackground` la
+recalcule à chaque frame depuis le scroll (`progress²`, pour que l'effet reste
+imperceptible pendant la section 04 et ne s'affirme qu'en fin de descente). Une
+prop d'état re-rendrait le composant 60 fois par seconde et remonterait la
+scène WebGL en boucle. Le battement est neutralisé si
+`prefers-reduced-motion: reduce`.
+
+**La rotation automatique est désactivée sur le globe de fond**
+(`autoRotate={false}`) : les légendes doivent désigner une géographie précise
+(« Ici, les ressources » sur l'Afrique, « Ailleurs, la valeur » sur le reste du
+monde), ce qui suppose que la planète ne tourne pas sous le texte. Le
+glisser-déposer reste actif, donc l'exploration du §6.5 n'est pas perdue. Si
+la rotation est réactivée un jour, les positions fixes des `CALLOUTS` n'ont
+plus aucun sens et doivent être remplacées par une projection 3D → écran.
+
+Détails à ne pas casser (chacun corrige un bug réel, commenté dans le code) :
+le `setPixelRatio` est **forcé à 2 minimum** parce que le canvas est étiré
+jusqu'à ~×5 ; le rayon horizon est plafonné à 1400 px car au-delà de ~5000 px
+composés Chromium cesse silencieusement de composer le calque WebGL ;
+`setClearColor(0x000000, 0)` est indispensable (sinon carré noir derrière le
+globe) ; `GLOBE_FILL_RATIO` est une valeur mesurée sur capture d'écran, pas
+calculée.
+
+La texture est une image NASA Black Marble (domaine public) recolorée pixel
+par pixel dans une rampe noir → or (`recolorNightLights`) pour coller à la
+charte — pas un filtre de teinte global, qui laisserait passer le bleu du
+fichier source.
+
+`GlobeSVG.tsx` (SVG pur, zéro dépendance) est le fallback fonctionnel si WebGL
+ou la texture échouent (§8.3) — pas du code mort. `prefers-reduced-motion` fige
+la rotation plutôt que de supprimer le rendu 3D.
+
+`components/ui/globe-config.ts` existe uniquement pour partager la taille du
+conteneur sans que `Section04Observe` n'entraîne `three.js` dans le bundle
+principal — ne pas y ajouter d'import lourd.
+
+### Formulaire (section 09)
+
+`Section09Circle.tsx` poste vers `/api/subscribe`, **qui n'existe pas** (pas
+de dossier `app/api/`). Le client gère déjà `idle/submitting/success/error/duplicate`
+avec la convention **409 = doublon**. À l'implémentation du route handler,
+respecter ce contrat de code de statut plutôt que modifier le client.
+
+### Polices
+
+Montserrat et Cormorant Garamond via `next/font/google` dans
+[app/layout.tsx](app/layout.tsx). La police de titre « Apollo » est premium et
+absente — voir [public/fonts/README.md](public/fonts/README.md). Elle est
+déclarée par un `@font-face` classique dans `app/globals.css` (pas
+`next/font/local`, qui casserait le build tant que les fichiers manquent). La
+cascade `--font-apollo` retombe sur Cormorant. Une fois les fichiers ajoutés,
+Apollo prend le dessus sans autre modification ; migrer alors vers
+`next/font/local`.
+
+### Tokens de design
+
+`tailwind.config.ts`, issus de la charte. **`terracota` vaut `#F2C94C`,
+c'est-à-dire un or/jaune, pas une terre cuite** — le nom du token et sa valeur
+divergent, c'est voulu et utilisé partout (y compris en dur dans les `stroke`
+SVG). Ne pas « corriger » la couleur. Autres tokens : `black`, `light-grey`,
+`granite`, `lavender`, `desert-sand`, plus `letterSpacing.widest2` (0.2em),
+très utilisé.
+
+### Divers
+
+- Alias `@/*` → racine du dépôt (`tsconfig.json`).
+- Le dossier `Logo/` à la racine **n'est pas servi** (seul `public/` l'est) ;
+  le code référence `/logo/R-or.png` → `public/logo/R-or.png`.
+- `.claude/settings.local.json` est versionné et contient des permissions
+  pointant vers un chemin de machine obsolète.
+
+## Manques connus (liste complète dans README.md)
+
+- **Endpoint `/api/subscribe` non implémenté** — c'est la cause du message
+  « Une erreur technique est survenue » relevé au debrief V1 sur le formulaire
+  de la section 09 : la requête part vers une route inexistante, donc 404,
+  donc `catch`. Laissé de côté sur décision du client, mais le retour reste
+  ouvert : le formulaire ne peut pas fonctionner tant que la route et le
+  service d'emailing ne sont pas choisis.
 - Fichiers de la police Apollo absents.
-- Pages légales (`/confidentialite`, `/mentions-legales`) référencées dans le
-  footer, à créer.
-- La progression de l'écran de chargement (section 00) est un timer simulé,
-  pas un vrai suivi des ressources.
-- Aucun des événements analytics listés au §12.1 du cahier des charges
-  (`intro_complete`, `hero_cta_click`, `card_flip`, `form_submit_success`…)
-  n'est câblé.
-- Bug connu (préexistant, sans lien avec les animations) : `Countdown.tsx`
-  déclenche une erreur d'hydratation React (le rendu serveur et le premier
-  rendu client calculent `Date.now()` séparément, d'où un écart d'une
-  seconde). À corriger en figeant la valeur affichée au premier rendu
-  client avant de démarrer l'intervalle.
+- La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
+  ressources.
+- Aucun événement analytics du §12.1 n'est câblé.
+- Musique de fond et vidéo (entre les sections 09 et 10) demandées au debrief
+  V1 : les fichiers n'ont pas encore été fournis. Pour la musique, prévoir un
+  bouton son visible et coupé par défaut — l'autoplay est bloqué par les
+  navigateurs sans interaction préalable.
+
+## Gouttière latérale et indicateur de progression
+
+`ProgressIndicator` n'affiche son libellé qu'à partir de `xl`, et
+`SectionWrapper` réserve en contrepartie `xl:px-60`. **Les deux réglages sont
+solidaires** : en dessous de `xl`, le libellé débordait sur la colonne de texte
+des sections (le debrief V1 signale « OBSERVER DEPUIS L'AUTRE CÔTÉ » qui
+chevauche le titre de la section 04). Ne pas en changer un sans l'autre.
+
+La gouttière est symétrique à dessein : le debrief demande par ailleurs de
+recentrer la section 09, donc aucun `pl-` asymétrique ici.
+
+## Images
+
+`public/images/` — visuels du debrief V1, convertis en WebP depuis les PNG
+sources (~16 Mo au total à l'origine, 732 Ko après conversion) : `hero-bg`,
+`bascule-bg`, et `indice-{minerais,terres,hydro,pib}` pour les quatre cartes
+de la section 05, qui se retournent au survol pour les révéler. Toutes sont
+posées derrière un voile sombre — le texte clair de la charte doit rester
+lisible par-dessus.

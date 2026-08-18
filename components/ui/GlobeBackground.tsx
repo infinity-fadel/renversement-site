@@ -41,19 +41,46 @@ const HORIZON_VISIBLE_PX = 190;
 // des HORIZON_VISIBLE_PX ciblés).
 const GLOBE_FILL_RATIO = 0.9;
 
-// Légendes affichées uniquement pendant la section 04 (§6.5), positionnées
-// en pixels autour du centre du globe dans son état "REST_STATE" — elles ne
-// suivent pas l'agrandissement (pas de transform: scale partagé), pour
-// rester lisibles tant qu'elles sont visibles, et s'effacent avant que le
-// globe ne devienne trop grand pour qu'un texte superposé ait du sens.
+// Rayon visible du globe à l'état de repos : le disque n'occupe pas tout le
+// canvas (cf. GLOBE_FILL_RATIO plus bas), d'où ce calcul plutôt que BASE_SIZE / 2.
+const REST_RADIUS_PX = 288;
+
+// Légendes affichées uniquement pendant la section 04 (§6.5), positionnées en
+// pixels autour du centre du globe dans son état "REST_STATE" — elles ne
+// suivent pas l'agrandissement (pas de transform: scale partagé), pour rester
+// lisibles tant qu'elles sont visibles, et s'effacent avant que le globe ne
+// devienne trop grand pour qu'un texte superposé ait du sens.
+//
+// Placement revu au debrief V1 : les deux premières doivent désigner une
+// géographie (« ICI » sur l'Afrique, « AILLEURS » sur le reste du monde) et la
+// troisième se lire juste sous le globe. C'est ce qui a imposé de figer la
+// rotation automatique (autoRotate={false} plus bas) : sans géographie stable,
+// aucun placement fixe ne peut rester juste.
+//
+// L'Afrique fait face à la caméra à l'orientation initiale (INITIAL_ROTATION_Y
+// dans GlobeThree.tsx), donc au centre du disque ; « ailleurs » est pris sur le
+// limbe droit.
 const CALLOUTS = [
-  { text: "Ici, les ressources.", dx: -80, dy: -230, align: "left" as const },
-  { text: "Ailleurs, la valeur.", dx: 220, dy: -50, align: "left" as const },
+  {
+    text: "Ici, les ressources.",
+    dx: -68,
+    dy: -34,
+    width: 150,
+    align: "center" as const,
+  },
+  {
+    text: "Ailleurs, la valeur.",
+    dx: 130,
+    dy: -168,
+    width: 175,
+    align: "left" as const,
+  },
   {
     text: "Entre les deux, des flux que l'on questionne rarement.",
-    dx: 110,
-    dy: 180,
-    align: "left" as const,
+    dx: -210,
+    dy: REST_RADIUS_PX + 28,
+    width: 420,
+    align: "center" as const,
   },
 ];
 
@@ -81,6 +108,10 @@ function lerp(a: number, b: number, t: number) {
 export default function GlobeBackground() {
   const globeWrapperRef = useRef<HTMLDivElement>(null);
   const calloutsRef = useRef<HTMLDivElement>(null);
+  // Intensité du battement de la lueur, lue chaque frame par GlobeThree. Une
+  // ref plutôt qu'un état : elle change à chaque frame de scroll, un setState
+  // re-rendrait le composant (et donc remonterait la scène WebGL) en boucle.
+  const pulseRef = useRef(0);
   const [hasBeenVisible, setHasBeenVisible] = useState(false);
 
   useEffect(() => {
@@ -131,6 +162,13 @@ export default function GlobeBackground() {
         globeEl.style.opacity = visible ? "1" : "0";
         globeEl.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;
 
+        // Le battement de la lueur ne s'installe qu'une fois le globe descendu
+        // vers l'horizon. La progression est élevée au carré pour que l'effet
+        // reste imperceptible pendant la section 04 — où le globe est encore
+        // lisible comme une planète — et ne s'affirme que sur la fin de la
+        // descente, quand il ne reste plus qu'un arc lumineux en bas d'écran.
+        pulseRef.current = visible ? progress * progress : 0;
+
         calloutsEl.style.transform = `translate(${x}px, ${y}px)`;
         calloutsEl.style.opacity = visible
           ? String(Math.max(0, 1 - progress / 0.4))
@@ -154,7 +192,14 @@ export default function GlobeBackground() {
         className="absolute top-0 left-0 opacity-0"
         style={{ width: BASE_SIZE, height: BASE_SIZE, willChange: "transform, opacity" }}
       >
-        {hasBeenVisible && <GlobeThree active size={BASE_SIZE} />}
+        {hasBeenVisible && (
+          <GlobeThree
+            active
+            size={BASE_SIZE}
+            autoRotate={false}
+            pulseRef={pulseRef}
+          />
+        )}
       </div>
 
       <div
@@ -165,8 +210,17 @@ export default function GlobeBackground() {
         {CALLOUTS.map((c) => (
           <span
             key={c.text}
-            className="absolute text-[11px] tracking-widest2 uppercase text-terracota leading-snug w-40"
-            style={{ left: c.dx, top: c.dy }}
+            className="absolute text-base sm:text-lg tracking-widest2 uppercase text-terracota leading-snug"
+            style={{
+              left: c.dx,
+              top: c.dy,
+              width: c.width,
+              textAlign: c.align,
+              // Les deux premières légendes se lisent par-dessus le globe :
+              // sans ombre portée, elles se perdent dans les zones éclairées
+              // de la texture.
+              textShadow: "0 0 10px rgba(0,0,0,0.95), 0 0 26px rgba(0,0,0,0.8)",
+            }}
           >
             {c.text}
           </span>

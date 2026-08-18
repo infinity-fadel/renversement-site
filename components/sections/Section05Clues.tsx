@@ -1,46 +1,64 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import Image from "next/image";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { useInView } from "@/hooks/useInView";
 import { gsap } from "@/lib/gsap";
 
 /**
  * Section 05 — Les indices (§6.6)
+ *
  * Les chiffres sont externalisés dans un tableau (pas codés en dur dans le
- * JSX) pour pouvoir être modifiés "sans intervention lourde dans le code",
+ * JSX) pour pouvoir être modifiés « sans intervention lourde dans le code »,
  * comme demandé explicitement dans le cahier des charges. `Illustration`
  * pointe vers un petit motif décoratif propre à chaque carte (référence
  * maquette), purement ornemental (aria-hidden).
+ *
+ * Depuis le debrief V1, chaque carte se retourne au survol pour révéler une
+ * photographie au dos (§ « intégration d'image »). Le retournement est en CSS
+ * pur, comme celui de la section 07 : c'est un état d'interaction, pas une
+ * animation d'entrée.
  */
 const CLUES: Array<{
   value: string;
   percent: number;
   label: string;
+  image: string;
+  imageAlt: string;
   Illustration: () => React.JSX.Element;
 }> = [
   {
     value: "30 %",
     percent: 30,
     label: "des réserves minérales mondiales.",
+    image: "/images/indice-minerais.webp",
+    imageAlt: "Mine à ciel ouvert au crépuscule",
     Illustration: CrystalsIllustration,
   },
   {
     value: "65 %",
     percent: 65,
     label: "des terres arables non cultivées de la planète.",
+    image: "/images/indice-terres.webp",
+    imageAlt: "Terres cultivées s'étendant jusqu'aux montagnes",
     Illustration: DunesIllustration,
   },
   {
     value: "40 %",
     percent: 40,
     label: "du potentiel hydroélectrique mondial.",
+    image: "/images/indice-hydro.webp",
+    imageAlt: "Barrage hydroélectrique en fonctionnement de nuit",
     Illustration: FlowIllustration,
   },
   {
     value: "2 %",
     percent: 2,
     label: "du PIB mondial.",
+    image: "/images/indice-pib.webp",
+    imageAlt:
+      "Femme observant une carte du monde lumineuse au-dessus d'une ville",
     Illustration: GlobeDotsIllustration,
   },
 ];
@@ -50,36 +68,44 @@ const RING_RADIUS = 50;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 export default function Section05Clues() {
-  const { ref: viewRef, isInView } = useInView<HTMLDivElement>({
-    threshold: 0.3,
+  // L'observateur cible désormais la grille elle-même. Il était auparavant
+  // posé sur un conteneur `className="contents"` : un élément en
+  // `display: contents` ne génère aucune boîte, son rectangle est donc vide et
+  // l'IntersectionObserver ne pouvait pas atteindre le seuil demandé — d'où
+  // des animations qui ne se déclenchaient jamais (signalé au debrief V1
+  // comme « révélation séquentielle non respectée »).
+  const { ref: gridRef, isInView } = useInView<HTMLDivElement>({
+    threshold: 0.25,
   });
-  const gridRef = useRef<HTMLDivElement>(null);
-  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (!isInView || hasAnimated.current) return;
-    hasAnimated.current = true;
+    if (!isInView) return;
 
     // État final (anneaux à leur valeur cible) déjà rendu par défaut ;
     // seule l'entrée séquentielle est pilotée par GSAP.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const circles = gridRef.current?.querySelectorAll<SVGCircleElement>(
-      "[data-progress]"
-    );
-    const cards = gridRef.current?.querySelectorAll<HTMLElement>("[data-clue]");
+    const root = gridRef.current;
+    if (!root) return;
 
-    if (cards?.length) {
+    const cards = root.querySelectorAll<HTMLElement>("[data-clue]");
+    const circles = root.querySelectorAll<SVGCircleElement>("[data-progress]");
+
+    if (cards.length) {
       gsap.from(cards, {
         opacity: 0,
-        y: 16,
+        y: 20,
         duration: 0.6,
-        stagger: 0.15,
+        stagger: 0.18,
         ease: "power2.out",
       });
     }
 
-    circles?.forEach((circle, i) => {
+    // Le tracé part de l'anneau vide et rejoint la valeur cible : c'est cette
+    // montée lumineuse que le debrief demande de rendre perceptible (« pour
+    // les 30 %, on doit voir la progression du début jusqu'à 30 % »). Durée
+    // allongée et décalage par carte pour que la lecture soit possible.
+    circles.forEach((circle, i) => {
       const target = Number(circle.dataset.progress);
       const offset = RING_CIRCUMFERENCE * (1 - target / 100);
       gsap.fromTo(
@@ -87,150 +113,177 @@ export default function Section05Clues() {
         { strokeDashoffset: RING_CIRCUMFERENCE },
         {
           strokeDashoffset: offset,
-          duration: 1,
-          delay: i * 0.15,
-          ease: "power2.out",
+          duration: 1.6,
+          delay: 0.2 + i * 0.18,
+          ease: "power1.inOut",
         }
       );
     });
-  }, [isInView]);
+  }, [isInView, gridRef]);
 
   return (
     <SectionWrapper id="clues" className="text-center relative overflow-hidden">
-      <div ref={viewRef} className="contents">
-        {/* Arc décoratif + repère au-dessus du titre (référence maquette) */}
-        <div className="relative flex flex-col items-center mb-4">
-          <span
-            aria-hidden="true"
-            className="w-px h-8 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
-          />
-          <span
-            aria-hidden="true"
-            className="w-2 h-2 rounded-full border border-terracota mt-0.5"
-          />
-          <svg
-            aria-hidden="true"
-            className="absolute top-6 left-1/2 -translate-x-1/2 w-[42rem] max-w-[85vw] h-24 -z-10"
-            viewBox="0 0 700 120"
-            fill="none"
-          >
-            <path
-              d="M10 118 A 340 340 0 0 1 690 118"
-              stroke="#F2C94C"
-              strokeOpacity="0.3"
-              strokeWidth="1"
-            />
-          </svg>
-          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-widest2 text-light-grey mt-5">
-            Les indices
-          </h2>
-        </div>
-
-        <div
-          ref={gridRef}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-5xl"
+      {/* Arc décoratif + repère au-dessus du titre (référence maquette) */}
+      <div className="relative flex flex-col items-center mb-4">
+        <span
+          aria-hidden="true"
+          className="w-px h-8 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
+        />
+        <span
+          aria-hidden="true"
+          className="w-2 h-2 rounded-full border border-terracota mt-0.5"
+        />
+        <svg
+          aria-hidden="true"
+          className="absolute top-6 left-1/2 -translate-x-1/2 w-[42rem] max-w-[85vw] h-24 -z-10"
+          viewBox="0 0 700 120"
+          fill="none"
         >
-          {CLUES.map((clue) => {
-            const targetOffset = RING_CIRCUMFERENCE * (1 - clue.percent / 100);
-            return (
-              <div
-                key={clue.label}
-                data-clue
-                className="relative flex flex-col items-center gap-5 border border-light-grey/10 px-4 sm:px-6 pt-10 pb-14 overflow-hidden"
-              >
-                <div
-                  className="relative"
-                  style={{ width: RING_SIZE, height: RING_SIZE }}
-                >
-                  <svg
-                    width={RING_SIZE}
-                    height={RING_SIZE}
-                    viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
-                    className="absolute inset-0 -rotate-90"
-                    aria-hidden="true"
+          <path
+            d="M10 118 A 340 340 0 0 1 690 118"
+            stroke="#F2C94C"
+            strokeOpacity="0.3"
+            strokeWidth="1"
+          />
+        </svg>
+        <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-widest2 text-light-grey mt-5">
+          Les indices
+        </h2>
+      </div>
+
+      <div
+        ref={gridRef}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl w-full"
+      >
+        {CLUES.map((clue) => {
+          const targetOffset = RING_CIRCUMFERENCE * (1 - clue.percent / 100);
+          return (
+            <div
+              key={clue.label}
+              data-clue
+              tabIndex={0}
+              aria-label={`${clue.value} ${clue.label} — survoler pour voir l'illustration`}
+              className="group relative h-80 [perspective:1400px] rounded-sm"
+            >
+              <div className="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-visible:[transform:rotateY(180deg)]">
+                {/* Face avant — le chiffre et son anneau */}
+                <div className="absolute inset-0 [backface-visibility:hidden] flex flex-col items-center justify-center gap-5 border border-light-grey/10 px-4 sm:px-6 overflow-hidden">
+                  <div
+                    className="relative"
+                    style={{ width: RING_SIZE, height: RING_SIZE }}
                   >
-                    {/* piste en pointillés (référence maquette) */}
-                    <circle
-                      cx={RING_SIZE / 2}
-                      cy={RING_SIZE / 2}
-                      r={RING_RADIUS}
-                      fill="none"
-                      stroke="#F2C94C"
-                      strokeOpacity="0.3"
-                      strokeWidth="1"
-                      strokeDasharray="1 5"
-                      strokeLinecap="round"
-                    />
-                    <circle
-                      data-progress={clue.percent}
-                      cx={RING_SIZE / 2}
-                      cy={RING_SIZE / 2}
-                      r={RING_RADIUS}
-                      fill="none"
-                      stroke="#F2C94C"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeDasharray={RING_CIRCUMFERENCE}
-                      strokeDashoffset={targetOffset}
-                      style={{
-                        filter: "drop-shadow(0 0 5px rgba(242,201,76,0.85))",
-                      }}
-                    />
-                  </svg>
-                  <span
-                    className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-2xl text-terracota tabular-nums"
-                    style={{ textShadow: "0 0 16px rgba(242,201,76,0.6)" }}
-                  >
-                    {clue.value}
-                  </span>
+                    <svg
+                      width={RING_SIZE}
+                      height={RING_SIZE}
+                      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+                      className="absolute inset-0 -rotate-90"
+                      aria-hidden="true"
+                    >
+                      {/* piste en pointillés (référence maquette) */}
+                      <circle
+                        cx={RING_SIZE / 2}
+                        cy={RING_SIZE / 2}
+                        r={RING_RADIUS}
+                        fill="none"
+                        stroke="#F2C94C"
+                        strokeOpacity="0.3"
+                        strokeWidth="1"
+                        strokeDasharray="1 5"
+                        strokeLinecap="round"
+                      />
+                      <circle
+                        data-progress={clue.percent}
+                        cx={RING_SIZE / 2}
+                        cy={RING_SIZE / 2}
+                        r={RING_RADIUS}
+                        fill="none"
+                        stroke="#F2C94C"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeDasharray={RING_CIRCUMFERENCE}
+                        strokeDashoffset={targetOffset}
+                        style={{
+                          filter: "drop-shadow(0 0 5px rgba(242,201,76,0.85))",
+                        }}
+                      />
+                    </svg>
+                    <span
+                      className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-2xl text-terracota tabular-nums"
+                      style={{ textShadow: "0 0 16px rgba(242,201,76,0.6)" }}
+                    >
+                      {clue.value}
+                    </span>
+                  </div>
+
+                  <p className="text-[13px] sm:text-sm text-light-grey/70 leading-snug max-w-[13rem]">
+                    {clue.label}
+                  </p>
+
+                  <clue.Illustration />
                 </div>
 
-                <p className="text-[13px] sm:text-sm text-light-grey/70 leading-snug max-w-[13rem]">
-                  {clue.label}
-                </p>
-
-                <clue.Illustration />
+                {/* Face arrière — la photographie */}
+                <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] border border-terracota/60 overflow-hidden">
+                  <Image
+                    src={clue.image}
+                    alt={clue.imageAlt}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                    className="object-cover"
+                  />
+                  {/* Voile sombre : garantit le contraste du chiffre repris
+                      par-dessus la photo. */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/30" />
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-center">
+                    <span className="block font-display text-3xl text-terracota tabular-nums">
+                      {clue.value}
+                    </span>
+                    <span className="mt-1 block text-[13px] text-light-grey/80 leading-snug">
+                      {clue.label}
+                    </span>
+                  </div>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Trait pointillé de liaison vers la conclusion */}
-        <span
+      {/* Trait pointillé de liaison vers la conclusion */}
+      <span
+        aria-hidden="true"
+        className="w-px h-8 mt-6 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
+      />
+      <span
+        aria-hidden="true"
+        className="w-1.5 h-1.5 rounded-full bg-terracota mt-0.5"
+      />
+
+      <p className="mt-6 max-w-2xl text-light-grey">
+        Ce n&apos;est peut-être pas un problème de richesses.
+        <br />
+        <span className="font-display text-xl sm:text-2xl uppercase text-terracota">
+          C&apos;est peut-être un problème de clés.
+        </span>
+      </p>
+
+      {/* Indice de scroll (référence maquette) */}
+      <div className="mt-10 flex items-center gap-3 text-light-grey/50">
+        <svg
           aria-hidden="true"
-          className="w-px h-8 mt-6 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
-        />
-        <span
-          aria-hidden="true"
-          className="w-1.5 h-1.5 rounded-full bg-terracota mt-0.5"
-        />
-
-        <p className="mt-6 max-w-2xl text-light-grey">
-          Ce n&apos;est peut-être pas un problème de richesses.
-          <br />
-          <span className="font-display text-xl sm:text-2xl uppercase text-terracota">
-            C&apos;est peut-être un problème de clés.
-          </span>
-        </p>
-
-        {/* Indice de scroll (référence maquette) */}
-        <div className="mt-14 flex items-center gap-3 text-light-grey/50">
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="24"
-            viewBox="0 0 16 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.2"
-          >
-            <rect x="1" y="1" width="14" height="22" rx="7" />
-            <line x1="8" y1="6" x2="8" y2="11" strokeLinecap="round" />
-          </svg>
-          <span className="text-[11px] tracking-widest2 uppercase">
-            Faites défiler les données
-          </span>
-        </div>
+          width="16"
+          height="24"
+          viewBox="0 0 16 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.2"
+        >
+          <rect x="1" y="1" width="14" height="22" rx="7" />
+          <line x1="8" y1="6" x2="8" y2="11" strokeLinecap="round" />
+        </svg>
+        <span className="text-[11px] tracking-widest2 uppercase">
+          Faites défiler les données
+        </span>
       </div>
     </SectionWrapper>
   );

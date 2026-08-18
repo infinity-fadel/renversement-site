@@ -19,8 +19,9 @@ npm run dev
   composant (`components/sections/`).
 - **Domaine configurable** sans toucher au code — `config/site.config.ts` lit
   `NEXT_PUBLIC_SITE_DOMAIN`.
-- **Compte à rebours 120h**, calculé en heure d'Abidjan (UTC+0, sans DST) —
-  `hooks/useCountdown.ts` + `components/ui/Countdown.tsx`.
+- **Compte à rebours jusqu'au 2 octobre 2026**, calculé en heure d'Abidjan
+  (UTC+0, sans DST) — `hooks/useCountdown.ts` +
+  `components/ui/Countdown.tsx`.
 - **Globe Three.js** texturé "Terre de nuit" (NASA Black Marble, domaine
   public) — `components/ui/GlobeThree.tsx`, chargé côté client uniquement
   (`next/dynamic`, `ssr:false`), avec repli automatique sur le globe SVG
@@ -50,11 +51,15 @@ npm run dev
    cahier des charges.
 4. **Section 00** : le préchargement est simulé (timer) ; à remplacer par un
    vrai suivi de chargement des ressources critiques si besoin.
-5. **Pages légales** (`/confidentialite`, `/mentions-legales`) référencées
-   dans le footer, à créer avant mise en production.
+5. **Musique de fond et vidéo** (entre « Le Cercle » et « Phrase finale »)
+   demandées au debrief V1 — fichiers non encore fournis.
 6. **Analytics / Tag Manager** à brancher (§21).
 7. **Préparer la bascule V2** (§17) : routes `/le-livre`, `/auteur`,
    `/commander`, etc. — l'architecture App Router s'y prête nativement.
+
+> Les pages légales (`/confidentialite`, `/mentions-legales`) ont été retirées
+> du périmètre V1 à la demande du client (debrief V1) : les liens du footer ont
+> été supprimés.
 
 ## Stack
 

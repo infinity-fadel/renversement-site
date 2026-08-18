@@ -13,10 +13,13 @@ export type SectionMeta = {
   number: string; // "00".."11", affiché par l'indicateur
   navLabel: string; // libellé court pour le menu
   inNav: boolean;
-  // Ordre d'affichage dans le menu (§6.2), indépendant de l'ordre du
-  // parcours ci-dessous — le menu n'est pas censé suivre l'ordre des
-  // sections (ex. "Le Cercle" est listé avant "Compte à rebours" alors que
-  // la section 08 précède la section 09 dans le parcours). Ignoré si absent.
+  // Ordre d'affichage dans le menu. Depuis le debrief V1, il coïncide avec
+  // l'ordre du parcours (Le Renversement, Les indices, La bascule, Compte à
+  // rebours, Le Cercle) — le client a demandé de repasser "Compte à rebours"
+  // devant "Le Cercle", à rebours du §6.2 du cahier des charges. Le champ est
+  // conservé parce qu'il reste le seul point où l'ordre du menu se règle, et
+  // qu'il permet de les redésynchroniser sans toucher au parcours.
+  // Ignoré si absent.
   navOrder?: number;
   // Libellé affiché à côté du numéro actif dans ProgressIndicator — repris
   // tel quel du tableau §5 du cahier des charges (titre court de section,
@@ -32,8 +35,8 @@ export const SECTIONS: SectionMeta[] = [
   { id: "clues", number: "05", navLabel: "Les indices", inNav: true, navOrder: 2, progressLabel: "Les indices" },
   { id: "shift", number: "06", navLabel: "La bascule", inNav: true, navOrder: 3, progressLabel: "Le basculement" },
   { id: "flip", number: "07", navLabel: "La carte", inNav: false, progressLabel: "Retournez la carte" },
-  { id: "urgency", number: "08", navLabel: "Compte à rebours", inNav: true, navOrder: 5, progressLabel: "Le renversement approche" },
-  { id: "circle", number: "09", navLabel: "Le Cercle", inNav: true, navOrder: 4, progressLabel: "Le Cercle" },
+  { id: "urgency", number: "08", navLabel: "Compte à rebours", inNav: true, navOrder: 4, progressLabel: "Le renversement approche" },
+  { id: "circle", number: "09", navLabel: "Le Cercle", inNav: true, navOrder: 5, progressLabel: "Le Cercle" },
   { id: "final", number: "10", navLabel: "Renversement", inNav: false, progressLabel: "Phrase finale" },
   { id: "footer", number: "11", navLabel: "Informations", inNav: false, progressLabel: "Informations" },
 ];

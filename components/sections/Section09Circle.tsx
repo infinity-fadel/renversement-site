@@ -199,9 +199,16 @@ export default function Section09Circle() {
           )}
         </div>
 
-        {/* Panneau latéral (référence maquette) */}
-        <div className="hidden lg:flex flex-col gap-6 w-72 shrink-0 pt-16">
-          {status === "success" && (
+        {/*
+          Panneau latéral (référence maquette) — n'apparaît qu'après une
+          inscription réussie, comme demandé au debrief V1. Le rendre
+          conditionnel règle du même coup le second retour : tant qu'il occupe
+          une colonne, il pousse le formulaire hors de l'axe et la section
+          paraît décentrée. Sans lui, la colonne `flex-1` occupe toute la
+          largeur et le contenu retombe au centre.
+        */}
+        {status === "success" && (
+          <div className="hidden lg:flex flex-col gap-6 w-72 shrink-0 pt-16">
             <div className="border border-terracota px-6 py-5 flex items-start gap-3">
               <span
                 aria-hidden="true"
@@ -213,23 +220,23 @@ export default function Section09Circle() {
                 Vous êtes dans le Cercle.
               </span>
             </div>
-          )}
 
-          <div className="border border-light-grey/15 px-6 py-6">
-            <span className="text-xs tracking-widest2 uppercase text-terracota">
-              Prolongez l&apos;expérience.
-            </span>
-            <span aria-hidden="true" className="block w-8 h-px bg-terracota/40 my-3" />
-            <p className="text-sm text-light-grey/60 leading-relaxed">
-              D&apos;autres indices vous attendent.
-              <br />
-              Le moment venu, vous comprendrez.
-            </p>
-            <p className="mt-3 text-sm text-terracota leading-relaxed">
-              En attendant, restez attentif.
-            </p>
+            <div className="border border-light-grey/15 px-6 py-6">
+              <span className="text-xs tracking-widest2 uppercase text-terracota">
+                Prolongez l&apos;expérience.
+              </span>
+              <span aria-hidden="true" className="block w-8 h-px bg-terracota/40 my-3" />
+              <p className="text-sm text-light-grey/60 leading-relaxed">
+                D&apos;autres indices vous attendent.
+                <br />
+                Le moment venu, vous comprendrez.
+              </p>
+              <p className="mt-3 text-sm text-terracota leading-relaxed">
+                En attendant, restez attentif.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </SectionWrapper>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useCountdown } from "@/hooks/useCountdown";
 import { COUNTDOWN_CONFIG } from "@/config/site.config";
 
@@ -35,21 +36,38 @@ export default function Countdown({
 }) {
   const timeLeft = useCountdown(COUNTDOWN_CONFIG.targetDate);
 
-  if (timeLeft.isExpired) {
-    onExpire?.();
-  }
+  // `onExpire` est un effet de bord : l'appeler pendant le rendu déclenchait
+  // un setState en cours de rendu chez tout parent qui fournirait la prop.
+  useEffect(() => {
+    if (timeLeft?.isExpired) onExpire?.();
+  }, [timeLeft?.isExpired, onExpire]);
 
-  const elapsedFraction = Math.min(
-    1,
-    Math.max(0, 1 - timeLeft.totalMs / TOTAL_DURATION_MS)
-  );
+  // `timeLeft` est nul tant que le composant n'est pas monté (voir
+  // useCountdown : le HTML statique ne peut pas contenir l'heure réelle).
+  // On rend alors le même gabarit avec des tirets — mêmes dimensions, donc
+  // aucun saut de mise en page à l'hydratation.
+  const isPending = timeLeft === null;
+  const format = (value: number | undefined, pad = false) =>
+    isPending || value === undefined
+      ? "––"
+      : pad
+        ? String(value).padStart(2, "0")
+        : String(value);
+
+  const elapsedFraction = isPending
+    ? 0
+    : Math.min(1, Math.max(0, 1 - timeLeft.totalMs / TOTAL_DURATION_MS));
   const dashOffset = RING_CIRCUMFERENCE * elapsedFraction;
 
   return (
     <div
       role="timer"
       aria-live="polite"
-      aria-label={`Temps restant avant la révélation : ${timeLeft.days} jours, ${timeLeft.hours} heures, ${timeLeft.minutes} minutes`}
+      aria-label={
+        isPending
+          ? "Calcul du temps restant avant la révélation"
+          : `Temps restant avant la révélation : ${timeLeft.days} jours, ${timeLeft.hours} heures, ${timeLeft.minutes} minutes`
+      }
       className="relative mx-auto"
       style={{ width: RING_SIZE, height: RING_SIZE }}
     >
@@ -140,7 +158,7 @@ export default function Countdown({
             textShadow: "0 0 24px rgba(242,201,76,0.65)",
           }}
         >
-          {timeLeft.days}
+          {format(timeLeft?.days)}
         </span>
         <span className="-mt-1 text-xs tracking-[0.2em] uppercase text-light-grey/70">
           Jours
@@ -156,7 +174,7 @@ export default function Countdown({
                   className="tabular-nums text-base sm:text-lg leading-none font-semibold text-light-grey"
                   style={{ fontFamily: "var(--font-apollo, serif)" }}
                 >
-                  {String(timeLeft[key]).padStart(2, "0")}
+                  {format(timeLeft?.[key], true)}
                 </span>
                 <span className="mt-1 text-[0.55rem] tracking-[0.12em] uppercase text-light-grey/50 whitespace-nowrap">
                   {label}

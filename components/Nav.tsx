@@ -80,15 +80,18 @@ export default function Nav() {
             Être prévenu
           </a>
 
-          {/* Bouton burger mobile */}
+          {/* Bouton burger mobile — icône standard (debrief V1 : le libellé
+              texte « MENU » ne se lisait pas comme un bouton de menu). Le nom
+              accessible reste textuel via aria-label. */}
           <button
             type="button"
-            className="md:hidden text-light-grey text-xs tracking-widest2 uppercase"
+            className="md:hidden text-light-grey p-1 -mr-1"
             aria-expanded={isMobileOpen}
             aria-controls="mobile-menu"
+            aria-label={isMobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
             onClick={() => setIsMobileOpen((v) => !v)}
           >
-            {isMobileOpen ? "Fermer" : "Menu"}
+            {isMobileOpen ? <CloseIcon /> : <BurgerIcon />}
           </button>
         </div>
       </nav>
@@ -117,5 +120,39 @@ export default function Nav() {
         </div>
       )}
     </header>
+  );
+}
+
+function BurgerIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      <path d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="26"
+      height="26"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }
