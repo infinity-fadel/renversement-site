@@ -147,10 +147,13 @@ cas explicitement demandés par le cahier des charges — **5 sections** :
 |---|---|
 | `Section00Loader` | Apparition progressive du logo puis des lignes, et sortie en ouverture circulaire (`clip-path: circle()`) |
 | `Section02Hero` | Titre révélé mot par mot par masque — déclenché par la prop `start`, pas par un observateur (voir plus bas) |
-| `Section03Direction` | Rotation 0→180° pilotée par le scroll, **par paliers de 20°** (`ScrollTrigger` + `gsap.to` à chaque cran) |
 | `Section05Clues` | Entrée séquentielle des cartes + tracé progressif des anneaux de pourcentage |
 | `Section06Shift` | Flash d'opacité par ligne à l'activation + révélation de la phrase de conclusion |
 | `Section10Final` | Halo de lumière puis apparition lente du texte (timeline > 3 s) |
+
+La section 03 n'anime plus rien : son cadran « 180° » et sa rotation au scroll
+ont été supprimés à la 2e passe de retours, avec la phrase renversée qu'ils
+révélaient. Elle ne dépend donc plus de GSAP.
 
 **Deux pièges de déclenchement, corrigés au debrief V1 — ne pas les
 réintroduire :**
@@ -308,22 +311,30 @@ très utilisé.
 
 ## Fond sonore
 
-`components/ui/SoundToggle.tsx`, monté depuis `app/page.tsx` derrière le drapeau
-`SITE_CONFIG.features.sound`. Piste dans `public/audio/ambient.mp3`.
+`components/ui/SoundToggle.tsx`, monté depuis `Nav.tsx` (juste à gauche du CTA,
+placement demandé par le client) derrière le drapeau `SITE_CONFIG.features.sound`.
+Piste dans `public/audio/ambient.mp3`.
 
-- **Coupé par défaut, et ça ne doit pas changer** : les navigateurs bloquent la
-  lecture automatique sans geste préalable (un autoplay ne marcherait
-  simplement pas), et le critère WCAG 1.4.2 impose un contrôle pour tout son de
-  plus de trois secondes qui démarre seul.
-- `preload="none"` : les 2,7 Mo ne sont téléchargés qu'au premier clic, donc
-  aucun coût sur le chargement initial. Vérifié : aucune requête `/audio/` tant
-  que le bouton n'est pas actionné.
-- Le choix est mémorisé (`localStorage`). À la restauration, la lecture est
-  retentée puis **retombe silencieusement sur l'état coupé** si le navigateur
-  refuse — sans quoi le bouton afficherait un état mensonger.
-- Le basculement est optimiste au clic (le bouton réagit avant que `play()` ne
-  résolve, la promesse n'aboutissant qu'après mise en tampon) mais **pas** à la
-  restauration, où le refus est le cas attendu.
+Démarrage automatique demandé par le client. Ce qui est réellement possible :
+
+- La lecture est tentée dès le montage ; elle n'aboutit que pour les visiteurs
+  que le navigateur juge engagés avec le domaine. Sinon elle démarre au premier
+  geste (`pointerdown`, `click`, `keydown`, `touchend`…).
+- **L'astuce du démarrage muet puis démasquage ne fonctionne pas ici.** La règle
+  « muted autoplay toujours autorisé » de Chrome ne vaut que pour `<video>` ;
+  un `<audio muted>` est refusé exactement comme un audio normal — vérifié,
+  `NotAllowedError`, avec `preload` à `none` comme à `auto`. Ne pas réintroduire
+  de pré-lecture muette en croyant gagner quelque chose.
+- **Le défilement ne compte pas comme une interaction** au sens des
+  navigateurs : un visiteur qui ne ferait que scroller n'entendrait rien. C'est
+  la raison d'être du bouton, au-delà de WCAG 1.4.2.
+- `preload="none"` : les 2,7 Mo ne partent qu'au premier `play()` accepté.
+  Vérifié : aucune requête `/audio/` tant que rien n'a démarré.
+- Le choix est mémorisé (`localStorage`) et le refus explicite **prime sur le
+  démarrage automatique** : plus aucune tentative, plus aucun téléchargement.
+- `startedRef` neutralise le double montage des effets en mode strict React :
+  sans lui, deux séquences de `play()` se disputaient le même élément et aucune
+  n'aboutissait.
 - La piste source a été recoupée : elle tombait à −47 dB sur ses cinq dernières
   secondes, ce qui creusait un trou à chaque bouclage. Coupée à 238 s avec
   fondus symétriques.

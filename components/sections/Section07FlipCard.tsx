@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import Image from "next/image";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 
 /**
@@ -235,15 +236,17 @@ function CardFace({
       }}
     >
       {children}
-      {/* Monogramme de marque, agrandi : à `text-xl` il se lisait comme une
-          coquille typographique plutôt que comme la signature de la carte. */}
-      <span
+      {/* Monogramme de marque officiel (2e passe de retours) : c'était jusqu'ici
+          la lettre « R » composée dans la police de titre, pas le vrai logo. */}
+      <Image
         aria-hidden="true"
-        className="mt-5 font-display text-4xl sm:text-5xl leading-none text-terracota"
-        style={{ textShadow: "0 0 18px rgba(242,201,76,0.45)" }}
-      >
-        R
-      </span>
+        src="/logo/R-or.webp"
+        alt=""
+        width={256}
+        height={256}
+        className="mt-5 w-11 h-11 sm:w-14 sm:h-14"
+        style={{ filter: "drop-shadow(0 0 14px rgba(242,201,76,0.4))" }}
+      />
     </div>
   );
 }

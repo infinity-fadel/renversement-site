@@ -63,37 +63,6 @@ export default function Section09Circle() {
     <SectionWrapper id="circle" className="relative overflow-hidden">
       <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-start gap-12 lg:gap-16 px-2">
         <div className="relative flex-1 text-center flex flex-col items-center">
-          {/* Halo décoratif derrière le titre (référence maquette) — mis à
-              l'échelle de cette colonne (pas de la section entière) pour
-              rester centré sur le "09" même quand le panneau latéral prend
-              de la place à droite. */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-72 sm:h-96 pointer-events-none overflow-hidden -z-10"
-          >
-            <svg
-              viewBox="0 0 1200 400"
-              preserveAspectRatio="none"
-              className="w-full h-full"
-            >
-              <path
-                d="M120 380 A 560 560 0 0 1 1080 380"
-                fill="none"
-                stroke="#F2C94C"
-                strokeOpacity="0.45"
-                strokeWidth="1.5"
-                style={{ filter: "drop-shadow(0 0 8px rgba(242,201,76,0.5))" }}
-              />
-              <path
-                d="M40 400 A 650 650 0 0 1 1160 400"
-                fill="none"
-                stroke="#EFEFE8"
-                strokeOpacity="0.06"
-                strokeWidth="1"
-              />
-            </svg>
-          </div>
-
           <div aria-hidden="true" className="flex flex-col items-center mb-3">
             <span className="font-display text-sm text-terracota">09</span>
             <span className="w-6 h-px bg-terracota/60 mt-2" />
@@ -188,13 +157,6 @@ export default function Section09Circle() {
                   : "Rejoindre le Cercle"}
               </button>
 
-              <p className="flex items-center gap-2 justify-center text-[11px] tracking-widest2 uppercase text-light-grey/40 mt-1">
-                <LockIcon />
-                <span>
-                  Vos données restent confidentielles. Aucun partage. Aucun
-                  bruit inutile.
-                </span>
-              </p>
             </form>
           )}
         </div>
@@ -239,24 +201,6 @@ export default function Section09Circle() {
         )}
       </div>
     </SectionWrapper>
-  );
-}
-
-function LockIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      className="shrink-0"
-    >
-      <rect x="4" y="11" width="16" height="9" rx="2" />
-      <path d="M8 11V7a4 4 0 0 1 8 0v4" strokeLinecap="round" />
-    </svg>
   );
 }
 

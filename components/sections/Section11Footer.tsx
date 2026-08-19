@@ -1,5 +1,5 @@
 import { SITE_CONFIG } from "@/config/site.config";
-import Wordmark from "@/components/ui/Wordmark";
+import Image from "next/image";
 
 /**
  * Section 11 — Footer (§6.12)
@@ -36,7 +36,13 @@ export default function Section11Footer() {
           <span className="flex-1 h-px bg-terracota/30" />
         </div>
 
-        <Wordmark className="font-display text-2xl sm:text-3xl uppercase text-light-grey tracking-widest2" />
+        <Image
+          src="/logo/wordmark.webp"
+          alt="RENVERSEMENT"
+          width={1421}
+          height={120}
+          className="h-6 sm:h-8 w-auto"
+        />
       </div>
 
       <div className="relative border-t border-light-grey/10 px-6 py-8 flex flex-col items-center gap-3 text-center">

@@ -10,24 +10,52 @@ const TARGET_VOLUME = 0.32;
 const FADE_IN_MS = 1800;
 const FADE_OUT_MS = 700;
 
+// Événements susceptibles de conférer une « activation utilisateur ». Tous ne
+// qualifient pas (le défilement et la molette, notamment, ne l'accordent pas
+// dans Chrome) — on les écoute quand même : la tentative est sans coût et
+// certains navigateurs sont plus permissifs. La première qui aboutit gagne.
+const GESTURES = [
+  "pointerdown",
+  "pointerup",
+  "click",
+  "keydown",
+  "touchend",
+  "wheel",
+  "scroll",
+] as const;
+
 /**
- * Fond sonore du site (§ debrief V1 : « plonger les utilisateurs dans l'esprit
- * du renversement »).
+ * Fond sonore du site (debrief V1 : « plonger les utilisateurs dans l'esprit du
+ * renversement »). Démarrage automatique demandé explicitement par le client.
  *
- * Coupé par défaut, et c'est délibéré à double titre :
- *  - les navigateurs bloquent la lecture audio automatique tant que
- *    l'utilisateur n'a pas interagi avec la page ; un autoplay ne marcherait
- *    tout simplement pas ;
- *  - le critère WCAG 1.4.2 impose un moyen d'arrêter tout son de plus de trois
- *    secondes qui démarre seul.
+ * Ce qu'aucun code ne peut changer : un navigateur refuse toute lecture non
+ * sollicitée tant que le visiteur n'a pas interagi avec la page. La stratégie
+ * est donc en deux temps :
  *
- * Le choix est mémorisé : au retour sur le site, on retente la lecture, et si
- * le navigateur la refuse on retombe silencieusement sur l'état coupé plutôt
- * que d'afficher un bouton qui mentirait sur l'état réel.
+ *  1. On tente la lecture dès le montage. Elle passe pour les visiteurs que le
+ *     navigateur juge « engagés » avec le domaine (Media Engagement Index de
+ *     Chrome, autorisation explicite dans Safari…).
+ *  2. Sinon, on démarre au tout premier geste du visiteur.
+ *
+ * NB : l'astuce classique du démarrage muet suivi d'un démasquage ne s'applique
+ * PAS ici. La règle « muted autoplay toujours autorisé » de Chrome ne vaut que
+ * pour `<video>` ; un `<audio muted>` est refusé exactement comme un audio
+ * normal (vérifié : NotAllowedError, avec `preload` à `none` comme à `auto`).
+ * Inutile donc de faire tourner la piste en silence en attendant.
+ *
+ * Limite à connaître : le défilement ne constitue pas une interaction au sens
+ * des navigateurs. Un visiteur qui se contenterait de scroller à la molette ou
+ * au trackpad, sans jamais cliquer ni taper au clavier, n'entendrait rien — le
+ * bouton reste là pour lui.
+ *
+ * Le seul cas où l'on ne tente rien : le visiteur a explicitement coupé le son
+ * lors d'une visite précédente. Son choix prime sur le démarrage automatique.
  */
 export default function SoundToggle() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const fadeRef = useRef<number | undefined>(undefined);
+  const unlockedRef = useRef(false);
+  const startedRef = useRef(false);
   const [isOn, setIsOn] = useState(false);
   // Le bouton n'apparaît qu'après le montage : son état dépend de
   // localStorage, qui n'existe pas au rendu statique.
@@ -40,9 +68,9 @@ export default function SoundToggle() {
       if (fadeRef.current) cancelAnimationFrame(fadeRef.current);
 
       const from = el.volume;
-      const start = performance.now();
+      const t0 = performance.now();
       const step = (now: number) => {
-        const p = Math.min(1, (now - start) / ms);
+        const p = Math.min(1, (now - t0) / ms);
         el.volume = Math.max(0, Math.min(1, from + (target - from) * p));
         if (p < 1) fadeRef.current = requestAnimationFrame(step);
         else onDone?.();
@@ -52,50 +80,64 @@ export default function SoundToggle() {
     []
   );
 
-  /**
-   * `optimistic` bascule le bouton avant que `play()` n'ait résolu.
-   *
-   * La promesse ne se résout qu'une fois la lecture réellement lancée, donc
-   * après la mise en tampon : sur une connexion lente, attendre la laisserait
-   * afficher « éteint » pendant une seconde ou deux après le clic, comme si le
-   * bouton ne répondait pas. On bascule donc tout de suite et on revient en
-   * arrière si le navigateur refuse.
-   *
-   * Au contraire, à la restauration du choix mémorisé (sans geste utilisateur),
-   * le refus est le cas *attendu* : pas d'optimisme, sinon l'égaliseur
-   * s'afficherait une fraction de seconde avant de disparaître.
-   */
-  const enable = useCallback(
-    async (optimistic = true) => {
-      const el = audioRef.current;
-      if (!el) return false;
-      el.volume = 0;
-      if (optimistic) setIsOn(true);
-      try {
-        await el.play();
-      } catch {
-        // Lecture refusée (politique d'autoplay) : on reste coupé.
-        if (optimistic) setIsOn(false);
-        return false;
-      }
-      setIsOn(true);
-      fadeTo(TARGET_VOLUME, FADE_IN_MS);
-      return true;
-    },
-    [fadeTo]
-  );
+  const detachRef = useRef<(() => void) | undefined>(undefined);
 
-  const disable = useCallback(() => {
-    setIsOn(false);
-    fadeTo(0, FADE_OUT_MS, () => audioRef.current?.pause());
+  /**
+   * Lance la lecture. Renvoie `false` si le navigateur la refuse.
+   *
+   * Le contrôle après coup n'est pas superflu : Chrome peut résoudre le
+   * `play()` puis remettre l'élément en pause quelques millisecondes plus tard
+   * si l'activation n'était pas valable. Sans cette vérification on croirait le
+   * son lancé alors qu'il ne l'est pas.
+   */
+  const start = useCallback(async () => {
+    const el = audioRef.current;
+    if (!el || unlockedRef.current) return false;
+
+    el.muted = false;
+    el.volume = 0;
+    try {
+      await el.play();
+    } catch {
+      return false;
+    }
+    await new Promise((r) => setTimeout(r, 80));
+    if (el.paused) return false;
+
+    unlockedRef.current = true;
+    setIsOn(true);
+    fadeTo(TARGET_VOLUME, FADE_IN_MS);
+    localStorage.setItem(STORAGE_KEY, "on");
+    detachRef.current?.();
+    return true;
   }, [fadeTo]);
 
-  // Restauration du choix précédent.
+  // Démarrage automatique.
   useEffect(() => {
     setIsReady(true);
-    if (localStorage.getItem(STORAGE_KEY) !== "on") return;
-    void enable(false);
-  }, [enable]);
+    const el = audioRef.current;
+    if (!el) return;
+    // `reactStrictMode` monte les effets deux fois en développement : sans ce
+    // garde-fou, deux séquences de `play()` se disputaient le même élément et
+    // aucune n'aboutissait.
+    if (startedRef.current) return;
+    startedRef.current = true;
+    if (localStorage.getItem(STORAGE_KEY) === "off") return;
+
+    // 1. Tentative immédiate. N'aboutit que pour les visiteurs que le
+    //    navigateur juge déjà engagés avec le domaine.
+    void start();
+
+    // 2. Sinon, au tout premier geste du visiteur.
+    const onGesture = () => void start();
+    GESTURES.forEach((e) =>
+      window.addEventListener(e, onGesture, { capture: true, passive: true })
+    );
+    detachRef.current = () =>
+      GESTURES.forEach((e) => window.removeEventListener(e, onGesture, true));
+
+    return () => detachRef.current?.();
+  }, [start]);
 
   // Onglet en arrière-plan : on suspend, sans changer le choix de
   // l'utilisateur — la musique reprend au retour.
@@ -118,19 +160,32 @@ export default function SoundToggle() {
   );
 
   const toggle = async () => {
+    const el = audioRef.current;
+    if (!el) return;
+
     if (isOn) {
-      disable();
+      setIsOn(false);
+      unlockedRef.current = false;
+      fadeTo(0, FADE_OUT_MS, () => el.pause());
       localStorage.setItem(STORAGE_KEY, "off");
-    } else {
-      const ok = await enable();
-      localStorage.setItem(STORAGE_KEY, ok ? "on" : "off");
+      return;
+    }
+
+    // Ici on est dans un gestionnaire de clic : l'activation est acquise, le
+    // démasquage ne peut pas être refusé.
+    setIsOn(true);
+    unlockedRef.current = false;
+    if (!(await start())) {
+      setIsOn(false);
+      localStorage.setItem(STORAGE_KEY, "off");
     }
   };
 
   return (
     <>
-      {/* `preload="none"` : rien n'est téléchargé tant que le visiteur n'a pas
-          demandé le son — les 2,7 Mo ne pèsent pas sur le chargement initial. */}
+      {/* `preload="none"` : c'est l'appel à `play()` qui déclenche le
+          téléchargement, en flux. Rien n'est chargé si le visiteur a coupé le
+          son lors d'une visite précédente. */}
       <audio ref={audioRef} src={TRACK_URL} loop preload="none" />
 
       {isReady && (
@@ -138,11 +193,9 @@ export default function SoundToggle() {
           type="button"
           onClick={toggle}
           aria-pressed={isOn}
-          aria-label={
-            isOn ? "Couper le fond sonore" : "Activer le fond sonore"
-          }
+          aria-label={isOn ? "Couper le fond sonore" : "Activer le fond sonore"}
           title={isOn ? "Couper le son" : "Activer le son"}
-          className="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full border border-terracota/60 bg-black/60 backdrop-blur-sm flex items-center justify-center gap-[3px] hover:border-terracota hover:bg-terracota/10 transition-colors"
+          className="shrink-0 w-9 h-9 rounded-full border border-terracota/60 flex items-center justify-center gap-[2px] hover:border-terracota hover:bg-terracota/10 transition-colors"
         >
           {isOn ? <Equalizer /> : <MutedIcon />}
         </button>
@@ -154,7 +207,7 @@ export default function SoundToggle() {
 /** Barres animées — l'état « en lecture » se lit d'un coup d'œil. */
 function Equalizer() {
   return (
-    <span aria-hidden="true" className="flex items-end gap-[3px] h-4">
+    <span aria-hidden="true" className="flex items-end gap-[2px] h-3">
       {[0, 1, 2, 3].map((i) => (
         <span
           key={i}
@@ -172,8 +225,8 @@ function MutedIcon() {
   return (
     <svg
       aria-hidden="true"
-      width="18"
-      height="18"
+      width="16"
+      height="16"
       viewBox="0 0 24 24"
       fill="none"
       stroke="#F2C94C"

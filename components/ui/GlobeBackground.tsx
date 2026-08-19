@@ -68,24 +68,31 @@ const REST_RADIUS_PX = 288;
 // dans GlobeThree.tsx), donc au centre du disque ; « ailleurs » est pris sur le
 // limbe droit.
 const CALLOUTS = [
+  // Centrée sur l'Afrique. Position mesurée sur capture : le centroïde du
+  // continent tombe à (-85, +40) du centre du disque ; le bloc étant centré sur
+  // sa largeur, `dx` vaut ce décalage moins la demi-largeur, et `dy` moins la
+  // demi-hauteur des deux lignes.
   {
     text: "Ici, les ressources.",
-    dx: -68,
-    dy: -34,
+    dx: -160,
+    dy: 18,
     width: 150,
     align: "center" as const,
   },
+  // Ramenée vers l'intérieur du disque (2e passe de retours) : elle mordait
+  // trop sur le limbe droit.
   {
     text: "Ailleurs, la valeur.",
-    dx: 130,
+    dx: 70,
     dy: -168,
     width: 175,
     align: "left" as const,
   },
+  // Remontée pour se lire au bas du globe plutôt que détachée en dessous.
   {
     text: "Entre les deux, des flux que l'on questionne rarement.",
     dx: -210,
-    dy: REST_RADIUS_PX + 28,
+    dy: REST_RADIUS_PX - 30,
     width: 420,
     align: "center" as const,
   },

@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { SECTIONS } from "@/config/sections.config";
 import { useActiveSection } from "@/hooks/useActiveSection";
-import Wordmark from "@/components/ui/Wordmark";
+import Image from "next/image";
+import SoundToggle from "@/components/ui/SoundToggle";
+import { SITE_CONFIG } from "@/config/site.config";
 
 /**
  * Section 01 — Navigation principale (§4.3, §6.2)
@@ -39,14 +41,20 @@ export default function Nav() {
             e.preventDefault();
             handleNavigate("hero");
           }}
-          // Agrandi (était `text-sm`). Volontairement plafonné à `text-2xl` :
-          // au-delà, la hauteur de ligne du monogramme dépasse celle du bouton
-          // « Être prévenu » et fait grandir la barre — or deux valeurs codées
-          // en dur en dépendent, le décalage du menu mobile (`top-[64px]` plus
-          // bas) et le `scroll-padding-top` de globals.css.
-          className="shrink-0 whitespace-nowrap font-display text-xl xl:text-2xl leading-none tracking-widest2 uppercase text-light-grey"
+          // Hauteur volontairement plafonnée : au-delà, le logo dépasse le
+          // bouton « Être prévenu » et fait grandir la barre — or deux valeurs
+          // codées en dur en dépendent, le décalage du menu mobile
+          // (`top-[70px]` plus bas) et le `scroll-padding-top` de globals.css.
+          className="shrink-0 block"
         >
-          <Wordmark />
+          <Image
+            src="/logo/wordmark.webp"
+            alt="RENVERSEMENT"
+            width={1421}
+            height={120}
+            priority
+            className="h-4 sm:h-5 xl:h-6 w-auto"
+          />
         </a>
 
         {/* Menu desktop */}
@@ -72,7 +80,11 @@ export default function Nav() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-5">
+          {/* Contrôle du son — remonté dans la barre à la demande du client
+              (il flottait auparavant en bas à droite de la page). */}
+          {SITE_CONFIG.features.sound && <SoundToggle />}
+
           {/* CTA (§6.2) — renvoie directement au formulaire de la section 09 */}
           <a
             href="#circle"

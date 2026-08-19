@@ -58,7 +58,7 @@ const CLUES: Array<{
     label: "du PIB mondial.",
     image: "/images/indice-pib.webp",
     imageAlt:
-      "Femme observant une carte du monde lumineuse au-dessus d'une ville",
+      "Femme observant une carte du monde lumineuse où seule l'Afrique brille, au-dessus d'un quartier précaire",
     Illustration: GlobeDotsIllustration,
   },
 ];
