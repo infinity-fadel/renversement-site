@@ -51,8 +51,9 @@ npm run dev
    cahier des charges.
 4. **Section 00** : le préchargement est simulé (timer) ; à remplacer par un
    vrai suivi de chargement des ressources critiques si besoin.
-5. **Musique de fond et vidéo** (entre « Le Cercle » et « Phrase finale »)
-   demandées au debrief V1 — fichiers non encore fournis.
+5. **Vidéo** entre « Le Cercle » et « Phrase finale » (debrief V1) — fichier
+   non encore fourni. La musique de fond, elle, est en place
+   (`components/ui/SoundToggle.tsx`, coupée par défaut).
 6. **Analytics / Tag Manager** à brancher (§21).
 7. **Préparer la bascule V2** (§17) : routes `/le-livre`, `/auteur`,
    `/commander`, etc. — l'architecture App Router s'y prête nativement.

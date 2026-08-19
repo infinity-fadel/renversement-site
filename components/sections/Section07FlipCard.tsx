@@ -44,8 +44,19 @@ const CARDS: Array<{
 ];
 
 export default function Section07FlipCard() {
-  // Force le remontage des cartes pour les réinitialiser toutes d'un coup.
-  const [resetCount, setResetCount] = useState(0);
+  // L'état de retournement est porté ici, une entrée par carte, et non plus
+  // dans chaque carte : les trois commandes du bas doivent pouvoir agir sur les
+  // deux cartes à la fois. Ça supprime au passage le remontage forcé par `key`
+  // qui servait auparavant à les réinitialiser.
+  const [flipped, setFlipped] = useState<boolean[]>(() => CARDS.map(() => false));
+
+  const toggleCard = (index: number) =>
+    setFlipped((prev) => prev.map((v, i) => (i === index ? !v : v)));
+
+  const allOnBack = flipped.every(Boolean);
+  const toggleAll = () => setFlipped(CARDS.map(() => !allOnBack));
+  const showBacks = () => setFlipped(CARDS.map(() => true));
+  const showFronts = () => setFlipped(CARDS.map(() => false));
 
   return (
     <SectionWrapper id="flip" className="text-center relative overflow-hidden">
@@ -64,7 +75,11 @@ export default function Section07FlipCard() {
 
       {/* Les deux cartes : côte à côte dès `md`, empilées en dessous. */}
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-6 lg:gap-10">
-        <FlippableCard key={`a-${resetCount}`} card={CARDS[0]} />
+        <FlippableCard
+          card={CARDS[0]}
+          isFlipped={flipped[0]}
+          onToggle={() => toggleCard(0)}
+        />
 
         <span
           aria-hidden="true"
@@ -73,25 +88,43 @@ export default function Section07FlipCard() {
           <DoubleArrowIcon />
         </span>
 
-        <FlippableCard key={`b-${resetCount}`} card={CARDS[1]} />
+        <FlippableCard
+          card={CARDS[1]}
+          isFlipped={flipped[1]}
+          onToggle={() => toggleCard(1)}
+        />
       </div>
 
+      {/*
+        Ces trois entrées avaient l'apparence de commandes mais seule la
+        dernière était cliquable — les deux autres n'étaient qu'une légende. Les
+        trois agissent désormais sur les deux cartes à la fois, avec des rôles
+        distincts : basculer, forcer le verso, revenir au recto. Les libellés
+        visibles sont ceux de la maquette ; l'`aria-label` porte l'action réelle
+        pour les lecteurs d'écran.
+      */}
       <div className="mt-14 flex flex-col sm:flex-row gap-8 sm:gap-14">
         <LegendItem
           icon={<HandIcon />}
           title="Cliquez pour retourner"
           description="Retournez la carte pour voir l'autre face."
+          actionLabel="Retourner les deux cartes"
+          onClick={toggleAll}
         />
         <LegendItem
           icon={<EyeIcon />}
           title="Voir l'autre face"
           description="Explorez les deux perspectives."
+          actionLabel="Afficher le verso des deux cartes"
+          pressed={allOnBack}
+          onClick={showBacks}
         />
         <LegendItem
           icon={<RefreshIcon />}
           title="Recommencer"
           description="Revenir à la première face."
-          onClick={() => setResetCount((c) => c + 1)}
+          actionLabel="Revenir au recto des deux cartes"
+          onClick={showFronts}
         />
       </div>
 
@@ -105,9 +138,15 @@ export default function Section07FlipCard() {
   );
 }
 
-function FlippableCard({ card }: { card: (typeof CARDS)[number] }) {
-  const [isFlipped, setIsFlipped] = useState(false);
-
+function FlippableCard({
+  card,
+  isFlipped,
+  onToggle,
+}: {
+  card: (typeof CARDS)[number];
+  isFlipped: boolean;
+  onToggle: () => void;
+}) {
   return (
     <div
       className="relative w-72 h-80 lg:w-80 lg:h-96 shrink-0"
@@ -124,7 +163,7 @@ function FlippableCard({ card }: { card: (typeof CARDS)[number] }) {
 
       <button
         type="button"
-        onClick={() => setIsFlipped((v) => !v)}
+        onClick={onToggle}
         aria-pressed={isFlipped}
         aria-label={
           isFlipped
@@ -196,7 +235,13 @@ function CardFace({
       }}
     >
       {children}
-      <span aria-hidden="true" className="mt-4 font-display text-xl text-terracota">
+      {/* Monogramme de marque, agrandi : à `text-xl` il se lisait comme une
+          coquille typographique plutôt que comme la signature de la carte. */}
+      <span
+        aria-hidden="true"
+        className="mt-5 font-display text-4xl sm:text-5xl leading-none text-terracota"
+        style={{ textShadow: "0 0 18px rgba(242,201,76,0.45)" }}
+      >
         R
       </span>
     </div>
@@ -207,45 +252,46 @@ function LegendItem({
   icon,
   title,
   description,
+  actionLabel,
+  pressed,
   onClick,
 }: {
   icon: ReactNode;
   title: string;
   description: string;
-  onClick?: () => void;
+  /** Décrit l'action réelle, les libellés visibles étant rédigés en consigne. */
+  actionLabel: string;
+  pressed?: boolean;
+  onClick: () => void;
 }) {
-  const content = (
-    <>
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={actionLabel}
+      aria-pressed={pressed}
+      className="group flex items-start gap-3 text-left rounded-sm transition-colors"
+    >
       <span
         aria-hidden="true"
-        className="shrink-0 w-9 h-9 rounded-full border border-terracota/50 flex items-center justify-center"
+        className={`shrink-0 w-9 h-9 rounded-full border flex items-center justify-center transition-colors ${
+          pressed
+            ? "border-terracota bg-terracota/15"
+            : "border-terracota/50 group-hover:border-terracota group-hover:bg-terracota/10"
+        }`}
       >
         {icon}
       </span>
       <span>
-        <span className="block text-[11px] tracking-widest2 uppercase text-light-grey">
+        <span className="block text-[11px] tracking-widest2 uppercase text-light-grey group-hover:text-terracota transition-colors">
           {title}
         </span>
-        <span className="block text-xs text-light-grey/50 mt-1">
+        <span className="block text-xs text-light-grey/50 mt-1 group-hover:text-light-grey/70 transition-colors">
           {description}
         </span>
       </span>
-    </>
+    </button>
   );
-
-  if (onClick) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className="flex items-start gap-3 text-left hover:opacity-80 transition-opacity"
-      >
-        {content}
-      </button>
-    );
-  }
-
-  return <div className="flex items-start gap-3 text-left">{content}</div>;
 }
 
 function DoubleArrowIcon() {

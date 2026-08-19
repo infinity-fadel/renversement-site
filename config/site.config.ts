@@ -89,6 +89,9 @@ export const SITE_CONFIG = {
   features: {
     countdown: true,
     globe: true,
+    // Fond sonore (debrief V1). Coupé par défaut côté visiteur ; ce drapeau
+    // retire purement et simplement le bouton et le fichier audio de la page.
+    sound: true,
     // V2 — désactivés en V1, prêts à activer
     commerce: false,
     payment: false,

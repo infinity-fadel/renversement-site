@@ -3,6 +3,8 @@
 import { useState } from "react";
 import StarfieldBackground from "@/components/ui/StarfieldBackground";
 import GlobeBackground from "@/components/ui/GlobeBackground";
+import SoundToggle from "@/components/ui/SoundToggle";
+import { SITE_CONFIG } from "@/config/site.config";
 import Nav from "@/components/Nav";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import Section00Loader from "@/components/sections/Section00Loader";
@@ -31,6 +33,7 @@ export default function Home() {
 
       <Nav />
       <ProgressIndicator />
+      {SITE_CONFIG.features.sound && <SoundToggle />}
 
       <main>
         {/* L'animation d'entrée du hero ne démarre qu'une fois l'écran de

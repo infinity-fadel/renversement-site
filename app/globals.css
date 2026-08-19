@@ -80,6 +80,21 @@ body {
 }
 
 /* ---------------------------------------------------------------------- */
+/* Barres de l'égaliseur (components/ui/SoundToggle.tsx)                  */
+/* Sous prefers-reduced-motion, la règle globale plus haut ramène la durée */
+/* à 0,01 ms : les barres se figent, le bouton reste lisible.             */
+/* ---------------------------------------------------------------------- */
+@keyframes sound-bar {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* ---------------------------------------------------------------------- */
 /* Keyframes du globe SVG (components/ui/GlobeSVG.tsx)                    */
 /* ---------------------------------------------------------------------- */
 @keyframes flowfade {

@@ -304,10 +304,29 @@ très utilisé.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
   ressources.
 - Aucun événement analytics du §12.1 n'est câblé.
-- Musique de fond et vidéo (entre les sections 09 et 10) demandées au debrief
-  V1 : les fichiers n'ont pas encore été fournis. Pour la musique, prévoir un
-  bouton son visible et coupé par défaut — l'autoplay est bloqué par les
-  navigateurs sans interaction préalable.
+- Vidéo entre les sections 09 et 10 (debrief V1) : fichier non fourni.
+
+## Fond sonore
+
+`components/ui/SoundToggle.tsx`, monté depuis `app/page.tsx` derrière le drapeau
+`SITE_CONFIG.features.sound`. Piste dans `public/audio/ambient.mp3`.
+
+- **Coupé par défaut, et ça ne doit pas changer** : les navigateurs bloquent la
+  lecture automatique sans geste préalable (un autoplay ne marcherait
+  simplement pas), et le critère WCAG 1.4.2 impose un contrôle pour tout son de
+  plus de trois secondes qui démarre seul.
+- `preload="none"` : les 2,7 Mo ne sont téléchargés qu'au premier clic, donc
+  aucun coût sur le chargement initial. Vérifié : aucune requête `/audio/` tant
+  que le bouton n'est pas actionné.
+- Le choix est mémorisé (`localStorage`). À la restauration, la lecture est
+  retentée puis **retombe silencieusement sur l'état coupé** si le navigateur
+  refuse — sans quoi le bouton afficherait un état mensonger.
+- Le basculement est optimiste au clic (le bouton réagit avant que `play()` ne
+  résolve, la promesse n'aboutissant qu'après mise en tampon) mais **pas** à la
+  restauration, où le refus est le cas attendu.
+- La piste source a été recoupée : elle tombait à −47 dB sur ses cinq dernières
+  secondes, ce qui creusait un trou à chaque bouclage. Coupée à 238 s avec
+  fondus symétriques.
 
 ## Gouttière latérale et indicateur de progression
 
@@ -336,6 +355,13 @@ largeur — les breakpoints Tailwind habituels ne servent à rien ici :
 - Le cadran du compte à rebours est plafonné à `38vh` (`Countdown.tsx`).
   `RING_SIZE` reste la référence du dessin SVG, seul l'affichage est mis à
   l'échelle via `viewBox` + `w-full h-full`.
+
+  **Toute cote interne du cadran doit passer par le helper `scaled()`** —
+  tailles de police, gouttières, marges, largeur du filet. Le conteneur étant
+  dimensionné en `vh`, une valeur en `px` fixe ou en `vw` ne rétrécit pas avec
+  lui : c'est ainsi que « HEURES » et « SECONDES » sortaient de l'anneau de 13
+  à 27 px sur les écrans larges et bas. `scaled(N)` rend `min(N px, N/10 vh)`,
+  soit exactement l'échelle du conteneur.
 - `SectionWrapper` réduit son rembourrage vertical via la variante arbitraire
   `[@media(max-height:820px)]:py-10`, et la section 08 resserre ses `mt-14`.
 

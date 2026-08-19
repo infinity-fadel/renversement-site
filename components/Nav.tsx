@@ -39,13 +39,18 @@ export default function Nav() {
             e.preventDefault();
             handleNavigate("hero");
           }}
-          className="font-display text-sm tracking-widest2 uppercase text-light-grey"
+          // Agrandi (était `text-sm`). Volontairement plafonné à `text-2xl` :
+          // au-delà, la hauteur de ligne du monogramme dépasse celle du bouton
+          // « Être prévenu » et fait grandir la barre — or deux valeurs codées
+          // en dur en dépendent, le décalage du menu mobile (`top-[64px]` plus
+          // bas) et le `scroll-padding-top` de globals.css.
+          className="shrink-0 whitespace-nowrap font-display text-xl xl:text-2xl leading-none tracking-widest2 uppercase text-light-grey"
         >
           <Wordmark />
         </a>
 
         {/* Menu desktop */}
-        <ul className="hidden md:flex items-center gap-8">
+        <ul className="hidden [@media(min-width:1160px)]:flex items-center gap-5 xl:gap-8">
           {navItems.map((item) => (
             <li key={item.id}>
               <a
@@ -55,7 +60,7 @@ export default function Nav() {
                   handleNavigate(item.id);
                 }}
                 aria-current={activeId === item.id ? "true" : undefined}
-                className={`text-xs tracking-widest2 uppercase transition-colors ${
+                className={`whitespace-nowrap text-xs tracking-widest2 uppercase transition-colors ${
                   activeId === item.id
                     ? "text-terracota"
                     : "text-light-grey/60 hover:text-light-grey"
@@ -75,7 +80,7 @@ export default function Nav() {
               e.preventDefault();
               handleNavigate("circle");
             }}
-            className="hidden sm:inline-block text-[11px] tracking-widest2 uppercase border border-terracota text-terracota px-5 py-2.5 hover:bg-terracota hover:text-black transition-colors"
+            className="hidden sm:inline-block shrink-0 whitespace-nowrap text-[11px] tracking-widest2 uppercase border border-terracota text-terracota px-5 py-2.5 hover:bg-terracota hover:text-black transition-colors"
           >
             Être prévenu
           </a>
@@ -85,7 +90,7 @@ export default function Nav() {
               accessible reste textuel via aria-label. */}
           <button
             type="button"
-            className="md:hidden text-light-grey p-1 -mr-1"
+            className="[@media(min-width:1160px)]:hidden text-light-grey p-1 -mr-1"
             aria-expanded={isMobileOpen}
             aria-controls="mobile-menu"
             aria-label={isMobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
@@ -100,7 +105,7 @@ export default function Nav() {
       {isMobileOpen && (
         <div
           id="mobile-menu"
-          className="md:hidden fixed inset-0 top-[64px] bg-black flex flex-col items-center justify-center gap-8"
+          className="[@media(min-width:1160px)]:hidden fixed inset-0 top-[70px] bg-black flex flex-col items-center justify-center gap-8"
         >
           {navItems.map((item) => (
             <a
