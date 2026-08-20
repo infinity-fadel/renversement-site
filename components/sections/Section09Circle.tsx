@@ -28,6 +28,7 @@ export default function Section09Circle() {
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim();
     const consent = formData.get("consent") === "on";
+    const honeypot = String(formData.get("website") ?? "");
 
     if (!name || !email || !consent) {
       setStatus("error");
@@ -42,7 +43,13 @@ export default function Section09Circle() {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, consent, source: "site-v1" }),
+        body: JSON.stringify({
+          name,
+          email,
+          consent,
+          website: honeypot,
+          source: "site-v1",
+        }),
       });
 
       if (res.status === 409) {
@@ -96,6 +103,18 @@ export default function Section09Circle() {
               className="mt-10 w-full max-w-sm flex flex-col gap-4"
               noValidate
             >
+              {/* Champ-piège : invisible, hors tabulation, ignoré des lecteurs
+                  d'écran. Un robot qui remplit tout le formulaire le remplira
+                  aussi, et /api/subscribe écartera la soumission. */}
+              <input
+                type="text"
+                name="website"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                className="hidden"
+              />
+
               <div className="flex flex-col gap-1 text-left">
                 <label
                   htmlFor="name"

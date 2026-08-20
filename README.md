@@ -31,8 +31,9 @@ npm run dev
 - **Accessibilité de base** : focus visible, `aria-live`, `aria-pressed`,
   respect de `prefers-reduced-motion`, interactions clavier sur les
   composants interactifs (bascule, flip card, rotation).
-- **Formulaire section 09** fonctionnel côté UI, avec gestion des états
-  (succès, doublon, erreur) — l'endpoint `/api/subscribe` reste à créer.
+- **Formulaire section 09** fonctionnel de bout en bout : validation côté
+  serveur, champ-piège anti-robot et relais des inscriptions par e-mail via
+  FormSubmit (`app/api/subscribe/route.ts`).
 
 ## Ce qu'il reste à faire (prochaines itérations)
 
@@ -46,9 +47,9 @@ npm run dev
    Le setup GSAP/ScrollTrigger partagé est dans `lib/gsap.ts`. Reste
    ouvert : affiner le flip de la section 07 (déjà fonctionnel en CSS pur)
    si un rendu plus riche est souhaité.
-3. **API `/api/subscribe`** + intégration CRM/emailing (Brevo, Mailchimp,
-   HubSpot…) — actuellement non trituré, décision à prendre au §9.3 du
-   cahier des charges.
+3. **API `/api/subscribe`** — en place, relais vers FormSubmit. Définir
+   `FORMSUBMIT_TARGET` puis valider l'e-mail d'activation envoyé à la première
+   soumission. Le passage à un vrai CRM (Brevo, Mailchimp…) reste ouvert §9.3.
 4. **Section 00** : le préchargement est simulé (timer) ; à remplacer par un
    vrai suivi de chargement des ressources critiques si besoin.
 5. **Vidéo** entre « Le Cercle » et « Phrase finale » (debrief V1) — fichier

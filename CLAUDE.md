@@ -297,12 +297,6 @@ très utilisé.
 
 ## Manques connus (liste complète dans README.md)
 
-- **Endpoint `/api/subscribe` non implémenté** — c'est la cause du message
-  « Une erreur technique est survenue » relevé au debrief V1 sur le formulaire
-  de la section 09 : la requête part vers une route inexistante, donc 404,
-  donc `catch`. Laissé de côté sur décision du client, mais le retour reste
-  ouvert : le formulaire ne peut pas fonctionner tant que la route et le
-  service d'emailing ne sont pas choisis.
 - Fichiers de la police Apollo absents.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
   ressources.
@@ -338,6 +332,25 @@ Démarrage automatique demandé par le client. Ce qui est réellement possible :
 - La piste source a été recoupée : elle tombait à −47 dB sur ses cinq dernières
   secondes, ce qui creusait un trou à chaque bouclage. Coupée à 238 s avec
   fondus symétriques.
+
+## Formulaire du Cercle
+
+`app/api/subscribe/route.ts` relaie vers **FormSubmit**. L'appel part du serveur,
+jamais du navigateur : l'adresse de destination resterait sinon dans le bundle
+client, exploitable par n'importe qui pour spammer la boîte.
+
+- Variable **`FORMSUBMIT_TARGET`** (adresse ou jeton FormSubmit). Sans préfixe
+  `NEXT_PUBLIC_`, volontairement. Non définie ⇒ 500 `not_configured`.
+- **FormSubmit n'envoie rien tant que l'adresse n'est pas confirmée** : la toute
+  première soumission déclenche un e-mail d'activation à valider. Avant ça, le
+  formulaire répond « succès » et rien n'arrive — c'est le piège classique de
+  mise en service.
+- `success` est renvoyé en **chaîne** (`"true"`) par FormSubmit, pas en booléen.
+- Champ-piège `website` dans le formulaire : rempli ⇒ on répond 200 sans rien
+  relayer. Un refus explicite apprendrait au robot à le contourner.
+- **FormSubmit ne déduplique pas.** La branche 409 → « déjà inscrite » du client
+  est donc inatteignable en l'état ; elle est conservée pour le jour où un vrai
+  CRM prendra le relais.
 
 ## Gouttière latérale et indicateur de progression
 
