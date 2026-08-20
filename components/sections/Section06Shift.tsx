@@ -139,7 +139,7 @@ export default function Section06Shift() {
 
       {/* Repère décoratif (cf. sections 04/05) */}
       <div aria-hidden="true" className="flex flex-col items-center my-6">
-        <span className="w-24 sm:w-40 h-px bg-[repeating-linear-gradient(to_right,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]" />
+        <span className="w-24 sm:w-40 h-px bg-[repeating-linear-gradient(to_right,#B4742A_0,#B4742A_2px,transparent_2px,transparent_6px)]" />
         <span className="w-3 h-3 rounded-full border border-dashed border-terracota flex items-center justify-center mt-1.5">
           <span className="w-1 h-1 rounded-full bg-terracota" />
         </span>
@@ -186,7 +186,7 @@ export default function Section06Shift() {
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#F2C94C"
+                  stroke="#B4742A"
                   strokeWidth="1.5"
                 >
                   <path
@@ -247,7 +247,7 @@ export default function Section06Shift() {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#F2C94C"
+            stroke="#B4742A"
             strokeWidth="1.5"
           >
             <path d="M9 3a9 9 0 1 0 6 15.5" strokeLinecap="round" />

@@ -18,7 +18,7 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
  */
 export default function Section03Direction() {
   return (
-    <SectionWrapper id="direction" className="text-center">
+    <SectionWrapper id="direction" compact className="text-center">
       <p className="font-display text-[clamp(1.5rem,3.6vw,2.75rem)] uppercase leading-tight text-light-grey max-w-3xl">
         On nous a appris à regarder dans une seule direction.
       </p>

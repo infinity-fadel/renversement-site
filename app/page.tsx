@@ -7,6 +7,7 @@ import Nav from "@/components/Nav";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import Section00Loader from "@/components/sections/Section00Loader";
 import Section02Hero from "@/components/sections/Section02Hero";
+import IntroVideo from "@/components/ui/IntroVideo";
 import Section03Direction from "@/components/sections/Section03Direction";
 import Section04Observe from "@/components/sections/Section04Observe";
 import Section05Clues from "@/components/sections/Section05Clues";
@@ -37,6 +38,9 @@ export default function Home() {
             chargement levé : sans ça elle se jouait derrière l'overlay et
             personne ne la voyait (cf. Section02Hero). */}
         <Section02Hero start={isLoaderDone} />
+        {/* Emplacement de la vidéo (3e debrief). Ne rend rien tant que le
+            fichier n'est pas fourni — voir components/ui/IntroVideo.tsx. */}
+        <IntroVideo />
         <Section03Direction />
         <Section04Observe />
         <Section05Clues />

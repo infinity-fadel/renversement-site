@@ -180,7 +180,15 @@ alternative clavier/tactile pleinement fonctionnelle (§6.4) et pilote la même
 ref.
 
 Section 07 (flip de carte) est en CSS pur (`transformStyle: preserve-3d`),
-sans GSAP.
+sans GSAP. Le retournement se déclenche au **survol** depuis le 3e debrief
+(« il faut que la carte se retourne au passage de la souris, pas attendre qu'on
+clique »). Le survol est un état séparé de l'état cliqué et la face affichée est
+le OU des deux : une carte déjà retournée au clic ne se re-retourne pas au
+survol, et sortir de la carte ne laisse pas d'état persistant faux derrière soi.
+Le clic reste actif — c'est le seul chemin au doigt et au clavier, et le §6.8
+interdit qu'une interaction essentielle dépende du survol. `onPointerEnter` est
+filtré sur `pointerType === "mouse"` : sans ce filtre, un tap tactile émet aussi
+un `pointerenter` et la carte revenait aussitôt à sa face de départ.
 
 ### Globe — architecture à deux rendus
 
@@ -280,10 +288,23 @@ Apollo prend le dessus sans autre modification ; migrer alors vers
 
 ### Tokens de design
 
-`tailwind.config.ts`, issus de la charte. **`terracota` vaut `#F2C94C`,
-c'est-à-dire un or/jaune, pas une terre cuite** — le nom du token et sa valeur
-divergent, c'est voulu et utilisé partout (y compris en dur dans les `stroke`
-SVG). Ne pas « corriger » la couleur. Autres tokens : `black`, `light-grey`,
+`tailwind.config.ts`, issus de la charte. **`terracota` vaut `#B4742A`,
+c'est-à-dire l'or bronze du logo, pas une terre cuite** — le nom du token et sa
+valeur divergent, c'est voulu et utilisé partout (y compris en dur dans les
+`stroke` SVG). Ne pas « corriger » la couleur.
+
+La valeur vient du 3e debrief (« utiliser la couleur du logo pour les textes en
+couleur sur le site » et « pour les boutons, utiliser la même couleur que celle
+du logo ») ; elle est échantillonnée sur `public/logo/wordmark.webp`, dont tous
+les pixels colorés valent `#B4742A`. Elle **remplace** le `#F2C94C` de la charte
+de marque : sur ce point le debrief prime sur `Brand Guidelines`. Contraste sur
+fond noir : 5,5:1, au-dessus du seuil AA (4,5:1) mais nettement en dessous des
+13,2:1 de l'ancienne valeur — vérifier ce ratio avant d'assombrir davantage.
+
+**Seule exception assumée** : `COLOR_RAMP` dans `GlobeThree.tsx` garde
+`[242, 201, 76]`. Cette rampe recolore une photo de lumières urbaines et
+l'essentiel des pixels éclairés tombe sur ce palier ; y poser l'or sombre du
+logo éteint le globe presque entièrement sur fond noir. Autres tokens : `black`, `light-grey`,
 `granite`, `lavender`, `desert-sand`, plus `letterSpacing.widest2` (0.2em),
 très utilisé.
 
@@ -301,7 +322,13 @@ très utilisé.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
   ressources.
 - Aucun événement analytics du §12.1 n'est câblé.
-- Vidéo entre les sections 09 et 10 (debrief V1) : fichier non fourni.
+- Vidéo d'introduction : fichier non fourni. Le 3e debrief la situe **entre le
+  hero (02) et la section 03** (et non plus entre 09 et 10 comme au debrief V1).
+  `components/ui/IntroVideo.tsx` est monté à cet endroit dans `app/page.tsx` et
+  ne rend **rien** tant que `SITE_CONFIG.introVideo` vaut `null` — pas de cadre
+  vide en production. Déposer le fichier dans `public/video/` et renseigner le
+  chemin suffit à l'activer. Pas de lecture automatique, volontairement : le
+  fond sonore tournerait par-dessus.
 
 ## Fond sonore
 
@@ -379,6 +406,9 @@ largeur — les breakpoints Tailwind habituels ne servent à rien ici :
 - Le cadran du compte à rebours est plafonné à `38vh` (`Countdown.tsx`).
   `RING_SIZE` reste la référence du dessin SVG, seul l'affichage est mis à
   l'échelle via `viewBox` + `w-full h-full`.
+
+  Les deux blocs de coordonnées décoratives qui flanquaient le cadran
+  (« 05° 17' NORD », « 15° 53' EST ») ont été retirés au 3e debrief.
 
   **Toute cote interne du cadran doit passer par le helper `scaled()`** —
   tailles de police, gouttières, marges, largeur du filet. Le conteneur étant

@@ -79,9 +79,14 @@ function pulseEnvelope(t: number): number {
   return rawPulse(t) / PULSE_PEAK;
 }
 
-// Rampe de couleur noir chaud → terracota → or, indexée sur la luminance
-// (0-255) du pixel d'origine. Élimine la dominante bleu-gris du fichier
-// NASA pour rester cohérent avec les tokens de marque (terracota #F2C94C).
+// Rampe de couleur noir chaud → or, indexée sur la luminance (0-255) du
+// pixel d'origine. Élimine la dominante bleu-gris du fichier NASA.
+//
+// Volontairement NON alignée sur le token `terracota`, passé à la couleur du
+// logo (#B4742A) au 3e debrief : cette rampe recolore une photographie de
+// lumières urbaines, et l'essentiel des pixels éclairés tombe dans le palier
+// 110. Y poser l'or sombre du logo éteint le globe presque entièrement sur
+// fond noir. Le palier haut est un rehaut lumineux, pas une couleur de marque.
 const COLOR_RAMP: Array<[number, [number, number, number]]> = [
   [0, [8, 5, 4]],
   [45, [42, 24, 13]],

@@ -83,7 +83,7 @@ export default function Section02Hero({ start = true }: { start?: boolean }) {
         className="absolute inset-0 -z-10"
         style={{
           background:
-            "radial-gradient(ellipse at 50% 30%, rgba(242,201,76,0.12), transparent 60%)",
+            "radial-gradient(ellipse at 50% 30%, rgba(180,116,42,0.12), transparent 60%)",
         }}
       />
 

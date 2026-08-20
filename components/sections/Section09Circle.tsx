@@ -231,7 +231,7 @@ function CheckIcon() {
       height="14"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#F2C94C"
+      stroke="#B4742A"
       strokeWidth="2"
     >
       <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />

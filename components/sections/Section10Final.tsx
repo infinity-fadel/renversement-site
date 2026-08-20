@@ -63,7 +63,7 @@ export default function Section10Final() {
   }, [isInView, rootRef]);
 
   return (
-    <SectionWrapper id="final" className="text-center relative overflow-hidden">
+    <SectionWrapper id="final" compact className="text-center relative overflow-hidden">
       <div ref={rootRef} className="relative flex flex-col items-center w-full">
         {/* Halo de révélation — décoratif, il porte l'« effet de lumière
             extrêmement subtil ». */}
@@ -73,13 +73,13 @@ export default function Section10Final() {
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[42rem] max-w-[120vw] h-[42rem] max-h-[80vh] -z-10 pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle, rgba(242,201,76,0.16) 0%, rgba(242,201,76,0.05) 38%, transparent 70%)",
+              "radial-gradient(circle, rgba(180,116,42,0.16) 0%, rgba(180,116,42,0.05) 38%, transparent 70%)",
           }}
         />
 
         <p
           data-final-line
-          className="font-display text-[clamp(2rem,5.5vw,4rem)] uppercase leading-tight text-light-grey max-w-4xl"
+          className="font-display text-[clamp(1.6rem,4vw,2.75rem)] uppercase leading-tight text-light-grey max-w-3xl"
         >
           Bientôt, une autre lecture émergera.
         </p>

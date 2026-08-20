@@ -92,14 +92,14 @@ export default function GlobeSVG() {
         className="absolute inset-0 rounded-full"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(242,201,76,0.18), rgba(28,21,17,0) 70%)",
+            "radial-gradient(circle at 50% 50%, rgba(180,116,42,0.18), rgba(28,21,17,0) 70%)",
         }}
         aria-hidden="true"
       />
 
       {/* Cercle du globe, masque circulaire */}
       <div
-        className="absolute inset-[6%] rounded-full overflow-hidden border border-[#F2C94C]/40 cursor-grab active:cursor-grabbing"
+        className="absolute inset-[6%] rounded-full overflow-hidden border border-[#B4742A]/40 cursor-grab active:cursor-grabbing"
         style={{ background: "#000000" }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -152,7 +152,7 @@ function ContinentStrip() {
            C 890 220, 870 250, 850 270 C 840 300, 820 320, 800 300
            C 780 320, 760 300, 758 270 C 740 250, 735 220, 745 190
            C 730 160, 735 130, 760 90 Z"
-        fill="#F2C94C"
+        fill="#B4742A"
         opacity="0.9"
       />
       {/* Silhouettes voisines, plus discrètes — juste pour donner une impression de mappemonde continue */}
@@ -172,7 +172,7 @@ function StaticAfrica() {
            C 294 172, 278 196, 262 212 C 254 236, 238 252, 222 236
            C 206 252, 190 236, 188 212 C 174 196, 170 172, 178 148
            C 166 124, 170 100, 195 70 Z"
-        fill="#F2C94C"
+        fill="#B4742A"
       />
     </svg>
   );
@@ -192,8 +192,8 @@ function FlowLines() {
         <path d="M60 200 Q 200 120 340 200" className="animate-[flowfade_4s_ease-in-out_infinite]" />
         <path d="M80 260 Q 200 320 320 260" className="animate-[flowfade_4s_ease-in-out_infinite_0.7s]" />
       </g>
-      <circle cx="200" cy="180" r="2.5" fill="#F2C94C" className="animate-[flowfade_4s_ease-in-out_infinite_0.3s]" />
-      <circle cx="230" cy="220" r="2" fill="#F2C94C" className="animate-[flowfade_4s_ease-in-out_infinite_1.1s]" />
+      <circle cx="200" cy="180" r="2.5" fill="#B4742A" className="animate-[flowfade_4s_ease-in-out_infinite_0.3s]" />
+      <circle cx="230" cy="220" r="2" fill="#B4742A" className="animate-[flowfade_4s_ease-in-out_infinite_1.1s]" />
     </svg>
   );
 }

@@ -12,7 +12,7 @@ import Image from "next/image";
 export default function Section11Footer() {
   return (
     <footer id="footer" className="relative w-full overflow-hidden">
-      <div className="relative flex flex-col items-center justify-center text-center px-6 py-32 sm:py-40 min-h-[70vh]">
+      <div className="relative flex flex-col items-center justify-center text-center px-6 py-16 sm:py-20 min-h-[42vh]">
         {/* Les trois lignes sont espacées (debrief V1) : elles étaient séparées
             par de simples <br />, donc collées à l'interligne du titre. */}
         <h2 className="font-display text-2xl sm:text-4xl uppercase leading-tight flex flex-col gap-4 sm:gap-6">
@@ -41,7 +41,7 @@ export default function Section11Footer() {
           alt="RENVERSEMENT"
           width={1421}
           height={120}
-          className="h-6 sm:h-8 w-auto"
+          className="h-4 sm:h-5 w-auto"
         />
       </div>
 

@@ -6,10 +6,20 @@ import { useInView } from "@/hooks/useInView";
 export default function SectionWrapper({
   id,
   className = "",
+  compact = false,
   children,
 }: {
   id: string;
   className?: string;
+  /**
+   * Renonce au plein écran (`md:min-h-screen`) pour les sections dont le
+   * contenu est court. Sans ça, le contenu est centré dans un écran entier et
+   * laisse au-dessus comme en dessous une bande vide que le 3e debrief demande
+   * de réduire (sections 03 et 10). N'ajouter cette option qu'à des sections
+   * réellement courtes : le rythme « une section = un écran » fait sens
+   * partout ailleurs.
+   */
+  compact?: boolean;
   children: React.ReactNode;
 }) {
   const { ref, isInView } = useInView<HTMLElement>();
@@ -34,7 +44,9 @@ export default function SectionWrapper({
       // n'affiche son libellé qu'à partir de `2xl` (voir ce composant : les
       // deux valeurs sont couplées). Elle est symétrique pour ne pas décentrer
       // le contenu — le debrief demande au contraire de recentrer la section 09.
-      className={`reveal min-h-[60vh] md:min-h-screen w-full flex flex-col items-center justify-center px-6 sm:px-12 lg:px-16 2xl:px-80 py-14 sm:py-20 md:py-24 [@media(max-height:820px)]:py-10 ${className}`}
+      className={`reveal ${
+        compact ? "min-h-[46vh] md:min-h-[62vh]" : "min-h-[60vh] md:min-h-screen"
+      } w-full flex flex-col items-center justify-center px-6 sm:px-12 lg:px-16 2xl:px-80 py-14 sm:py-20 md:py-24 [@media(max-height:820px)]:py-10 ${className}`}
     >
       {children}
     </section>

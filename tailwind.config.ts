@@ -14,7 +14,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        terracota: "#F2C94C",
+        terracota: "#B4742A",
         black: "#000000",
         "light-grey": "#EFEFE8",
         granite: "#ABC9C6",

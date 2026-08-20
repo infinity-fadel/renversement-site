@@ -55,10 +55,7 @@ export default function Section08Urgency() {
 
       <p className="mt-5 flex items-center justify-center gap-2 text-[11px] tracking-widest2 uppercase text-light-grey/40 max-w-sm text-center">
         <LockIcon />
-        <span>
-          Vos données restent confidentielles. Aucun partage. Aucun bruit
-          inutile.
-        </span>
+        <span>Vos données restent confidentielles.</span>
       </p>
 
     </SectionWrapper>

@@ -49,7 +49,7 @@ export default function Section04Observe() {
                 height="22"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#F2C94C"
+                stroke="#B4742A"
                 strokeWidth="1.5"
               >
                 <path d="M3 12a9 9 0 1 0 3-6.7" strokeLinecap="round" />

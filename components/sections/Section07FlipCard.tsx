@@ -7,8 +7,12 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
 /**
  * Section 07 — Retournez la carte (§6.8)
  *
- * Deux cartes indépendamment retournables en 3D (§6.8 : « flip 3D à 180° au
- * clic… le contenu masqué ne doit pas rester lisible par le lecteur d'écran »).
+ * Deux cartes indépendamment retournables en 3D (§6.8 : « flip 3D à 180°…
+ * le contenu masqué ne doit pas rester lisible par le lecteur d'écran »).
+ *
+ * Le déclencheur est le SURVOL depuis le 3e debrief, et non plus le clic seul.
+ * Le clic reste actif — c'est le seul chemin possible au doigt et au clavier,
+ * et le §6.8 impose que rien d'essentiel ne dépende du survol.
  *
  * Répartition des textes fixée au debrief V1 : chaque carte porte une
  * affirmation au recto et son commentaire au verso — auparavant les deux
@@ -51,6 +55,17 @@ export default function Section07FlipCard() {
   // qui servait auparavant à les réinitialiser.
   const [flipped, setFlipped] = useState<boolean[]>(() => CARDS.map(() => false));
 
+  // Retournement au survol (3e debrief : « il faut que la carte se retourne au
+  // passage de la souris, pas attendre qu'on clique »). Le survol est un état
+  // séparé et non un `setFlipped` : sinon sortir de la carte laisserait un état
+  // persistant faux, et les trois commandes du bas ne sauraient plus quoi
+  // basculer. La face affichée est le OU des deux — une carte déjà retournée au
+  // clic ne se re-retourne donc pas quand la souris la survole.
+  const [hovered, setHovered] = useState<boolean[]>(() => CARDS.map(() => false));
+
+  const setHover = (index: number, value: boolean) =>
+    setHovered((prev) => prev.map((v, i) => (i === index ? value : v)));
+
   const toggleCard = (index: number) =>
     setFlipped((prev) => prev.map((v, i) => (i === index ? !v : v)));
 
@@ -78,8 +93,9 @@ export default function Section07FlipCard() {
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-6 lg:gap-10">
         <FlippableCard
           card={CARDS[0]}
-          isFlipped={flipped[0]}
+          isFlipped={flipped[0] || hovered[0]}
           onToggle={() => toggleCard(0)}
+          onHoverChange={(v) => setHover(0, v)}
         />
 
         <span
@@ -91,8 +107,9 @@ export default function Section07FlipCard() {
 
         <FlippableCard
           card={CARDS[1]}
-          isFlipped={flipped[1]}
+          isFlipped={flipped[1] || hovered[1]}
           onToggle={() => toggleCard(1)}
+          onHoverChange={(v) => setHover(1, v)}
         />
       </div>
 
@@ -107,8 +124,8 @@ export default function Section07FlipCard() {
       <div className="mt-14 flex flex-col sm:flex-row gap-8 sm:gap-14">
         <LegendItem
           icon={<HandIcon />}
-          title="Cliquez pour retourner"
-          description="Retournez la carte pour voir l'autre face."
+          title="Survolez pour retourner"
+          description="Le survol suffit ; le clic la maintient retournée."
           actionLabel="Retourner les deux cartes"
           onClick={toggleAll}
         />
@@ -143,10 +160,12 @@ function FlippableCard({
   card,
   isFlipped,
   onToggle,
+  onHoverChange,
 }: {
   card: (typeof CARDS)[number];
   isFlipped: boolean;
   onToggle: () => void;
+  onHoverChange: (isHovered: boolean) => void;
 }) {
   return (
     <div
@@ -165,6 +184,15 @@ function FlippableCard({
       <button
         type="button"
         onClick={onToggle}
+        // Filtré sur `pointerType` : au doigt, un tap émet aussi un
+        // pointerenter, la carte se retournerait au survol *et* au clic —
+        // donc reviendrait aussitôt à sa face de départ.
+        onPointerEnter={(e) => {
+          if (e.pointerType === "mouse") onHoverChange(true);
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") onHoverChange(false);
+        }}
         aria-pressed={isFlipped}
         aria-label={
           isFlipped
@@ -199,8 +227,8 @@ function FlippableCard({
         aria-hidden="true"
         className="absolute left-1/2 -translate-x-1/2 -bottom-4 w-3/4 h-px"
         style={{
-          background: "linear-gradient(to right, transparent, #F2C94C, transparent)",
-          boxShadow: "0 0 12px 1px rgba(242,201,76,0.6)",
+          background: "linear-gradient(to right, transparent, #B4742A, transparent)",
+          boxShadow: "0 0 12px 1px rgba(180,116,42,0.6)",
         }}
       />
     </div>
@@ -231,8 +259,8 @@ function CardFace({
         transform: rotated ? "rotateY(180deg)" : undefined,
         boxShadow:
           variant === "front"
-            ? "0 0 30px -8px rgba(242,201,76,0.35)"
-            : "0 0 30px -6px rgba(242,201,76,0.5)",
+            ? "0 0 30px -8px rgba(180,116,42,0.35)"
+            : "0 0 30px -6px rgba(180,116,42,0.5)",
       }}
     >
       {children}
@@ -245,7 +273,7 @@ function CardFace({
         width={256}
         height={256}
         className="mt-5 w-11 h-11 sm:w-14 sm:h-14"
-        style={{ filter: "drop-shadow(0 0 14px rgba(242,201,76,0.4))" }}
+        style={{ filter: "drop-shadow(0 0 14px rgba(180,116,42,0.4))" }}
       />
     </div>
   );
@@ -299,7 +327,7 @@ function LegendItem({
 
 function DoubleArrowIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="1.5">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B4742A" strokeWidth="1.5">
       <path
         d="M3 12h18M3 12l5-5M3 12l5 5M21 12l-5-5M21 12l-5 5"
         strokeLinecap="round"
@@ -311,7 +339,7 @@ function DoubleArrowIcon() {
 
 function HandIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="1.5">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4742A" strokeWidth="1.5">
       <path
         d="M9 12V5a1.5 1.5 0 0 1 3 0v6M12 5.5a1.5 1.5 0 0 1 3 0V11M15 6.5a1.5 1.5 0 0 1 3 0V12"
         strokeLinecap="round"
@@ -327,7 +355,7 @@ function HandIcon() {
 
 function EyeIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="1.5">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4742A" strokeWidth="1.5">
       <path
         d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"
         strokeLinecap="round"
@@ -340,7 +368,7 @@ function EyeIcon() {
 
 function RefreshIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" strokeWidth="1.5">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B4742A" strokeWidth="1.5">
       <path d="M4 4v5h5M20 20v-5h-5" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M5.5 15a8 8 0 0 0 13.9 3M18.5 9A8 8 0 0 0 4.6 6" strokeLinecap="round" />
     </svg>
@@ -378,7 +406,7 @@ function ArcWatermark() {
       strokeWidth="0.5"
     >
       <path d="M20 90 A 80 80 0 0 1 180 90" />
-      <circle cx="100" cy="20" r="1.5" fill="#F2C94C" stroke="none" />
+      <circle cx="100" cy="20" r="1.5" fill="#B4742A" stroke="none" />
     </svg>
   );
 }

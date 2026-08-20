@@ -127,7 +127,7 @@ export default function Section05Clues() {
       <div className="relative flex flex-col items-center mb-4">
         <span
           aria-hidden="true"
-          className="w-px h-8 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
+          className="w-px h-8 bg-[repeating-linear-gradient(to_bottom,#B4742A_0,#B4742A_2px,transparent_2px,transparent_6px)]"
         />
         <span
           aria-hidden="true"
@@ -141,7 +141,7 @@ export default function Section05Clues() {
         >
           <path
             d="M10 118 A 340 340 0 0 1 690 118"
-            stroke="#F2C94C"
+            stroke="#B4742A"
             strokeOpacity="0.3"
             strokeWidth="1"
           />
@@ -185,7 +185,7 @@ export default function Section05Clues() {
                         cy={RING_SIZE / 2}
                         r={RING_RADIUS}
                         fill="none"
-                        stroke="#F2C94C"
+                        stroke="#B4742A"
                         strokeOpacity="0.3"
                         strokeWidth="1"
                         strokeDasharray="1 5"
@@ -197,19 +197,19 @@ export default function Section05Clues() {
                         cy={RING_SIZE / 2}
                         r={RING_RADIUS}
                         fill="none"
-                        stroke="#F2C94C"
+                        stroke="#B4742A"
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeDasharray={RING_CIRCUMFERENCE}
                         strokeDashoffset={targetOffset}
                         style={{
-                          filter: "drop-shadow(0 0 5px rgba(242,201,76,0.85))",
+                          filter: "drop-shadow(0 0 5px rgba(180,116,42,0.85))",
                         }}
                       />
                     </svg>
                     <span
                       className="absolute inset-0 flex items-center justify-center font-display text-xl sm:text-2xl text-terracota tabular-nums"
-                      style={{ textShadow: "0 0 16px rgba(242,201,76,0.6)" }}
+                      style={{ textShadow: "0 0 16px rgba(180,116,42,0.6)" }}
                     >
                       {clue.value}
                     </span>
@@ -252,7 +252,7 @@ export default function Section05Clues() {
       {/* Trait pointillé de liaison vers la conclusion */}
       <span
         aria-hidden="true"
-        className="w-px h-8 mt-6 bg-[repeating-linear-gradient(to_bottom,#F2C94C_0,#F2C94C_2px,transparent_2px,transparent_6px)]"
+        className="w-px h-8 mt-6 bg-[repeating-linear-gradient(to_bottom,#B4742A_0,#B4742A_2px,transparent_2px,transparent_6px)]"
       />
       <span
         aria-hidden="true"
@@ -266,25 +266,6 @@ export default function Section05Clues() {
           C&apos;est peut-être un problème de clés.
         </span>
       </p>
-
-      {/* Indice de scroll (référence maquette) */}
-      <div className="mt-10 flex items-center gap-3 text-light-grey/50">
-        <svg
-          aria-hidden="true"
-          width="16"
-          height="24"
-          viewBox="0 0 16 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.2"
-        >
-          <rect x="1" y="1" width="14" height="22" rx="7" />
-          <line x1="8" y1="6" x2="8" y2="11" strokeLinecap="round" />
-        </svg>
-        <span className="text-[11px] tracking-widest2 uppercase">
-          Faites défiler les données
-        </span>
-      </div>
     </SectionWrapper>
   );
 }

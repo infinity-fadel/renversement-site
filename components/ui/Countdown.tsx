@@ -41,9 +41,9 @@ const scaled = (px: number) => `min(${px}px, ${px / 10}vh)`;
  * L'anneau se vide au fil du temps écoulé depuis le début de la fenêtre de
  * 120h (COUNTDOWN_CONFIG.durationHours) jusqu'à la date cible — une lecture
  * visuelle directe de "combien il reste", pas juste un décor statique.
- * Les graduations et les coordonnées géographiques latérales sont un
- * décor purement esthétique (registre "instrument de navigation"), pas des
- * données réelles.
+ * Les graduations sont un décor purement esthétique (registre "instrument
+ * de navigation"), pas des données réelles. Les deux blocs de coordonnées
+ * qui flanquaient le cadran ont été retirés au 3e debrief.
  */
 export default function Countdown({
   onExpire,
@@ -96,22 +96,6 @@ export default function Countdown({
         height: `min(${RING_SIZE}px, 38vh)`,
       }}
     >
-      {/* Coordonnées décoratives (référence maquette) */}
-      <div
-        aria-hidden="true"
-        className="hidden sm:flex flex-col items-end gap-1 absolute right-full top-1/2 -translate-y-1/2 mr-6 text-[10px] tracking-widest2 text-light-grey/40"
-      >
-        <span>05° 17&apos;</span>
-        <span>NORD</span>
-      </div>
-      <div
-        aria-hidden="true"
-        className="hidden sm:flex flex-col items-start gap-1 absolute left-full top-1/2 -translate-y-1/2 ml-6 text-[10px] tracking-widest2 text-light-grey/40"
-      >
-        <span>15° 53&apos;</span>
-        <span>EST</span>
-      </div>
-
       {/* Éclat du cadran, en trois couches : un bloom qui déborde largement,
           un halo interne qui remplit le disque, et les rehauts portés par le
           SVG lui-même (arc et graduations, plus bas). Purement décoratif et
@@ -121,7 +105,7 @@ export default function Countdown({
         className="absolute -inset-[18%] rounded-full pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(242,201,76,0.16) 0%, rgba(242,201,76,0.06) 42%, transparent 68%)",
+            "radial-gradient(circle, rgba(180,116,42,0.16) 0%, rgba(180,116,42,0.06) 42%, transparent 68%)",
         }}
       />
       <div
@@ -129,7 +113,7 @@ export default function Countdown({
         className="absolute inset-0 rounded-full pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(242,201,76,0.15) 0%, rgba(242,201,76,0.05) 52%, transparent 78%)",
+            "radial-gradient(circle at 50% 50%, rgba(180,116,42,0.15) 0%, rgba(180,116,42,0.05) 52%, transparent 78%)",
         }}
       />
 
@@ -157,10 +141,10 @@ export default function Countdown({
               y1={round(cy + Math.sin(angle) * innerR)}
               x2={round(cx + Math.cos(angle) * TICK_RADIUS)}
               y2={round(cy + Math.sin(angle) * TICK_RADIUS)}
-              stroke="#F2C94C"
+              stroke="#B4742A"
               strokeOpacity={isMajor ? 0.85 : 0.4}
               strokeWidth={isMajor ? 1.2 : 0.7}
-              style={{ filter: "drop-shadow(0 0 2px rgba(242,201,76,0.8))" }}
+              style={{ filter: "drop-shadow(0 0 2px rgba(180,116,42,0.8))" }}
             />
           );
         })}
@@ -179,7 +163,7 @@ export default function Countdown({
           cy={RING_SIZE / 2}
           r={RING_RADIUS}
           fill="none"
-          stroke="#F2C94C"
+          stroke="#B4742A"
           strokeWidth="2"
           strokeLinecap="round"
           strokeDasharray={RING_CIRCUMFERENCE}
@@ -187,7 +171,7 @@ export default function Countdown({
           style={{
             transition: "stroke-dashoffset 1s linear",
             filter:
-              "drop-shadow(0 0 5px rgba(242,201,76,0.95)) drop-shadow(0 0 14px rgba(242,201,76,0.55)) drop-shadow(0 0 30px rgba(242,201,76,0.3))",
+              "drop-shadow(0 0 5px rgba(180,116,42,0.95)) drop-shadow(0 0 14px rgba(180,116,42,0.55)) drop-shadow(0 0 30px rgba(180,116,42,0.3))",
           }}
         />
       </svg>
@@ -215,7 +199,7 @@ export default function Countdown({
             fontFamily: "var(--font-apollo, serif)",
             fontSize: scaled(68),
             textShadow:
-              "0 0 18px rgba(242,201,76,0.8), 0 0 42px rgba(242,201,76,0.45)",
+              "0 0 18px rgba(180,116,42,0.8), 0 0 42px rgba(180,116,42,0.45)",
           }}
         >
           {format(timeLeft?.days)}

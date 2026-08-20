@@ -229,7 +229,7 @@ function MutedIcon() {
       height="16"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#F2C94C"
+      stroke="#B4742A"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"

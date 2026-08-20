@@ -67,26 +67,43 @@ const REST_RADIUS_PX = 288;
 // L'Afrique fait face à la caméra à l'orientation initiale (INITIAL_ROTATION_Y
 // dans GlobeThree.tsx), donc au centre du disque ; « ailleurs » est pris sur le
 // limbe droit.
+//
+// Positions des deux premières recalculées au 3e debrief (« ICI, LES
+// RESSOURCES doit être bien centré sur la carte de l'Afrique », « AILLEURS,
+// LA VALEUR bien centré là où il y a le rectangle ») — non plus à l'oeil sur
+// une capture, mais par projection du point géographique visé :
+//
+//   sphère r=1.5 · caméra perspective fov 38° en z=6 · canvas 640 px
+//   globeGroup.rotation.y = INITIAL_ROTATION_Y (-2.35 rad)
+//   texture équirectangulaire : u = (lon + 180) / 360
+//   => x = r·cos(lat)·cos(lon), y = r·sin(lat), z = -r·cos(lat)·sin(lon),
+//      puis rotation autour de Y, puis division perspective.
+//
+// Repères obtenus (décalage en px depuis le centre du disque, dont le limbe
+// apparent vaut 240 px) :
+//   Afrique centrale  3°N / 19°E  -> (-130,  -16)
+//   Europe/Asie      42°N / 35°E  -> ( -35, -190)
+//
+// `dx`/`dy` positionnent le coin haut-gauche du bloc : ce sont donc ces
+// repères moins la demi-largeur et la demi-hauteur (~50 px sur deux lignes).
+// Toute modification de INITIAL_ROTATION_Y invalide ces quatre nombres.
 const CALLOUTS = [
-  // Centrée sur l'Afrique. Position mesurée sur capture : le centroïde du
-  // continent tombe à (-85, +40) du centre du disque ; le bloc étant centré sur
-  // sa largeur, `dx` vaut ce décalage moins la demi-largeur, et `dy` moins la
-  // demi-hauteur des deux lignes.
+  // Centrée sur l'Afrique centrale.
   {
     text: "Ici, les ressources.",
-    dx: -160,
-    dy: 18,
+    dx: -205,
+    dy: -41,
     width: 150,
     align: "center" as const,
   },
-  // Ramenée vers l'intérieur du disque (2e passe de retours) : elle mordait
-  // trop sur le limbe droit.
+  // Centrée sur la nappe lumineuse Europe → Asie occidentale, en haut du
+  // disque : c'est la zone entourée sur la capture du 3e debrief.
   {
     text: "Ailleurs, la valeur.",
-    dx: 70,
-    dy: -168,
+    dx: -123,
+    dy: -215,
     width: 175,
-    align: "left" as const,
+    align: "center" as const,
   },
   // Remontée pour se lire au bas du globe plutôt que détachée en dessous.
   {

@@ -85,6 +85,16 @@ export const SITE_CONFIG = {
   name: "RENVERSEMENT",
   tagline: "Et si l'Afrique finançait le monde ?",
   circleName: "Cercle des premiers observateurs",
+  // Vidéo d'introduction (3e debrief : « la vidéo sera intégrée ici », entre
+  // le hero et la section 03). Le fichier n'a pas été fourni : tant que cette
+  // valeur est nulle, IntroVideo ne rend rien — pas de cadre vide en
+  // production. Déposer le fichier dans public/video/ puis renseigner le
+  // chemin ici, ou passer NEXT_PUBLIC_INTRO_VIDEO_SRC chez l'hébergeur.
+  introVideo: (process.env.NEXT_PUBLIC_INTRO_VIDEO_SRC ?? null) as string | null,
+  // Image d'attente du lecteur, affichée avant lecture (facultative).
+  introVideoPoster: (process.env.NEXT_PUBLIC_INTRO_VIDEO_POSTER ?? null) as
+    | string
+    | null,
   // Feature flags simples — bascule facile vers la V2 sans redéploiement lourd
   features: {
     countdown: true,
