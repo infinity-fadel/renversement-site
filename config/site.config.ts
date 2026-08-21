@@ -109,15 +109,16 @@ export const SITE_CONFIG = {
   tagline: "Et si l'Afrique finançait le monde ?",
   circleName: "Cercle des premiers observateurs",
   // Vidéo d'introduction (3e debrief : « la vidéo sera intégrée ici », entre
-  // le hero et la section 03). Le fichier n'a pas été fourni : tant que cette
-  // valeur est nulle, IntroVideo ne rend rien — pas de cadre vide en
-  // production. Déposer le fichier dans public/video/ puis renseigner le
-  // chemin ici, ou passer NEXT_PUBLIC_INTRO_VIDEO_SRC chez l'hébergeur.
-  introVideo: (process.env.NEXT_PUBLIC_INTRO_VIDEO_SRC ?? null) as string | null,
+  // le hero et la section 03). Fichier fourni au 4e retour :
+  // « MYTHE 1 — L'AFRIQUE EST PAUVRE », renommé sans espaces ni apostrophe
+  // typographique (le nom d'origine cassait l'URL une fois servi).
+  // NEXT_PUBLIC_INTRO_VIDEO_SRC reste prioritaire pour surcharger sans
+  // toucher au code.
+  introVideo: (process.env.NEXT_PUBLIC_INTRO_VIDEO_SRC?.trim() ||
+    "/video/mythe-1-afrique-pauvre.mp4") as string | null,
   // Image d'attente du lecteur, affichée avant lecture (facultative).
-  introVideoPoster: (process.env.NEXT_PUBLIC_INTRO_VIDEO_POSTER ?? null) as
-    | string
-    | null,
+  introVideoPoster: (process.env.NEXT_PUBLIC_INTRO_VIDEO_POSTER?.trim() ||
+    null) as string | null,
   // Feature flags simples — bascule facile vers la V2 sans redéploiement lourd
   features: {
     countdown: true,

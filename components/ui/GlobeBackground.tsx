@@ -87,7 +87,17 @@ const REST_RADIUS_PX = 288;
 // `dx`/`dy` positionnent le coin haut-gauche du bloc : ce sont donc ces
 // repères moins la demi-largeur et la demi-hauteur (~50 px sur deux lignes).
 // Toute modification de INITIAL_ROTATION_Y invalide ces quatre nombres.
-const CALLOUTS = [
+type Callout = {
+  text: string;
+  dx: number;
+  dy: number;
+  width: number;
+  align: "center" | "left" | "right";
+  /** Classe de couleur ; l'or de la charte par défaut. */
+  tone?: string;
+};
+
+const CALLOUTS: Callout[] = [
   // Centrée sur l'Afrique centrale.
   {
     text: "Ici, les ressources.",
@@ -104,6 +114,9 @@ const CALLOUTS = [
     dy: -215,
     width: 175,
     align: "center" as const,
+    // Seule légende en blanc (4e retour client) : posée sur la nappe lumineuse
+    // Europe → Asie, elle se confondait avec les lumières dorées de la texture.
+    tone: "text-light-grey",
   },
   // Remontée pour se lire au bas du globe plutôt que détachée en dessous.
   {
@@ -242,7 +255,9 @@ export default function GlobeBackground() {
         {CALLOUTS.map((c) => (
           <span
             key={c.text}
-            className="absolute text-base sm:text-lg tracking-widest2 uppercase text-terracota leading-snug"
+            className={`absolute text-base sm:text-lg tracking-widest2 uppercase leading-snug ${
+              c.tone ?? "text-terracota"
+            }`}
             style={{
               left: c.dx,
               top: c.dy,

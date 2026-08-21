@@ -39,7 +39,7 @@ export default function Home() {
             personne ne la voyait (cf. Section02Hero). */}
         <Section02Hero start={isLoaderDone} />
         {/* Emplacement de la vidéo (3e debrief). Ne rend rien tant que le
-            fichier n'est pas fourni — voir components/ui/IntroVideo.tsx. */}
+            fichier n'est pas renseigné — voir components/ui/IntroVideo.tsx. */}
         <IntroVideo />
         <Section03Direction />
         <Section04Observe />
