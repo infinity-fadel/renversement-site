@@ -20,8 +20,20 @@
 //
 // NEXT_PUBLIC_ est nécessaire car cette valeur est utilisée côté client
 // (liens de partage, métadonnées Open Graph, etc.).
-export const SITE_DOMAIN =
-  process.env.NEXT_PUBLIC_SITE_DOMAIN ?? "renversement.africa"; // valeur de repli tant que le domaine définitif n'est pas choisi (§22)
+//
+// Repli avec `||` et non `??` : chez Vercel, une variable déclarée sans valeur
+// arrive comme chaîne vide, pas comme `undefined`. `??` la laissait passer,
+// SITE_URL valait alors « https:// » et `new URL()` dans app/layout.tsx faisait
+// échouer le build entier (« TypeError: Invalid URL », collecte de /_not-found).
+const FALLBACK_SITE_DOMAIN = "renversement.africa"; // repli tant que le domaine définitif n'est pas choisi (§22)
+
+export const SITE_DOMAIN = (
+  process.env.NEXT_PUBLIC_SITE_DOMAIN?.trim() || FALLBACK_SITE_DOMAIN
+)
+  // Tolère qu'on colle l'URL complète (« https://renversement.africa/ ») dans
+  // la variable : seul le nom d'hôte doit rester ici.
+  .replace(/^https?:\/\//i, "")
+  .replace(/\/+$/, "");
 
 export const SITE_URL = `https://${SITE_DOMAIN}`;
 
@@ -47,10 +59,20 @@ export const SITE_TIMEZONE = "Africa/Abidjan";
 // NB : l'ancien défaut « maintenant + 120 h » a été retiré — il produisait
 // une cible différente entre le build (serveur) et le chargement de page
 // (client), donc un décompte incohérent et une erreur d'hydratation React.
+
+// Même piège que pour le domaine : une variable vide chez l'hébergeur donnait
+// `new Date("")`, soit une date invalide, donc un compte à rebours en « NaN ».
+// Une valeur vide ou mal formée retombe silencieusement sur la valeur validée.
+function parseDateEnv(value: string | undefined, fallbackISO: string): Date {
+  const parsed = new Date(value?.trim() || fallbackISO);
+  return Number.isNaN(parsed.getTime()) ? new Date(fallbackISO) : parsed;
+}
+
 const DEFAULT_LAUNCH_ISO = "2026-10-02T00:00:00Z";
 
-export const LAUNCH_DATE: Date = new Date(
-  process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO ?? DEFAULT_LAUNCH_ISO
+export const LAUNCH_DATE: Date = parseDateEnv(
+  process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO,
+  DEFAULT_LAUNCH_ISO
 );
 
 // Début de la campagne de teasing — sert uniquement à donner une échelle à
@@ -60,8 +82,9 @@ export const LAUNCH_DATE: Date = new Date(
 // semaines, puis n'aurait bougé que dans les 5 derniers jours.
 const DEFAULT_CAMPAIGN_START_ISO = "2026-08-17T00:00:00Z";
 
-export const CAMPAIGN_START_DATE: Date = new Date(
-  process.env.NEXT_PUBLIC_CAMPAIGN_START_ISO ?? DEFAULT_CAMPAIGN_START_ISO
+export const CAMPAIGN_START_DATE: Date = parseDateEnv(
+  process.env.NEXT_PUBLIC_CAMPAIGN_START_ISO,
+  DEFAULT_CAMPAIGN_START_ISO
 );
 
 const COUNTDOWN_DURATION_HOURS = Math.max(
