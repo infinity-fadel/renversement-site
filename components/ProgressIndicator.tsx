@@ -24,12 +24,42 @@ export default function ProgressIndicator() {
         const isActive = i === activeIndex;
         return (
           <div key={section.id} className="relative flex flex-col items-center py-1.5">
+            {/*
+              Le numéro du chapitre entrant arrive par un demi-tour (§7.1 :
+              l'animation sert le récit — ici elle *est* le récit, le site
+              s'appelle RENVERSEMENT). Deux faces sur un conteneur en
+              `preserve-3d` : la face avant porte le numéro éteint, la face
+              arrière le même numéro en or, déjà retourné pour se lire à
+              l'endroit une fois le conteneur basculé. Le retournement n'est
+              donc pas un ornement posé sur le changement d'état — c'est le
+              changement d'état lui-même.
+
+              Une simple `rotate-180` conditionnelle ne marcherait pas : elle
+              laisserait les dix numéros inactifs affichés à l'envers.
+
+              Taille fixe et faces en `absolute` : le passage de 10 à 14 px
+              ferait autrement sauter le rythme vertical de la colonne pendant
+              la rotation.
+            */}
             <span
-              className={`font-display tabular-nums transition-all duration-500 ${
-                isActive ? "text-terracota text-sm" : "text-light-grey/30 text-[10px]"
-              }`}
+              className="relative block w-6 h-5 transition-transform duration-700 ease-flip will-change-transform"
+              style={{
+                transformStyle: "preserve-3d",
+                transform: isActive ? "rotateX(180deg)" : "rotateX(0deg)",
+              }}
             >
-              {section.number}
+              <span
+                className="absolute inset-0 grid place-items-center font-display tabular-nums text-[10px] text-light-grey/30"
+                style={{ backfaceVisibility: "hidden" }}
+              >
+                {section.number}
+              </span>
+              <span
+                className="absolute inset-0 grid place-items-center font-display tabular-nums text-sm text-terracota"
+                style={{ backfaceVisibility: "hidden", transform: "rotateX(180deg)" }}
+              >
+                {section.number}
+              </span>
             </span>
             {i < SECTIONS.length - 1 && (
               <span

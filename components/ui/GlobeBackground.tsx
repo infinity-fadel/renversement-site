@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import { horizonGeometry } from "./globe-config";
 
 const GlobeThree = dynamic(() => import("./GlobeThree"), { ssr: false });
 
@@ -14,30 +15,10 @@ const BASE_SIZE = 640;
 // inline de cette section.
 const REST_STATE = { xRatio: 0.74, yRatio: 0.48, scale: 1 };
 
-// État "horizon" (sections suivantes) : le rayon du globe est défini en
-// multiple de la largeur de viewport, et son centre est repoussé sous le
-// bas de l'écran de juste assez pour qu'il ne dépasse plus que sur
-// HORIZON_VISIBLE_PX pixels — sans ce calcul, grossir le rayon sans
-// repousser le centre d'autant fait déborder le globe sur tout l'écran au
-// lieu de ne laisser voir qu'un arc en bas.
-//
-// HORIZON_RADIUS_MAX_PX plafonne la taille finale composée (rayon × 2 ×
-// échelle) : au-delà d'environ 5000px, Chromium ne compose plus du tout le
-// canvas WebGL transformé (limite de taille de calque GPU) — le globe
-// devient silencieusement invisible, pas juste flou. Un rayon plus modeste
-// a aussi l'avantage de rendre la courbure de la planète bien plus lisible
-// à l'écran (un trop grand rayon, vu d'assez près, finit par paraître
-// plat).
-const HORIZON_RADIUS_VW = 0.62;
-const HORIZON_RADIUS_MAX_PX = 1400;
-
-// Hauteur de l'arc qui dépasse en bas d'écran. Plafonnée EN PIXELS *et* en
-// fraction de la hauteur du viewport : une valeur fixe de 190 px représente
-// 18 % d'un écran de 1080 px de haut mais 25 % d'un écran de 760 px, et l'arc
-// finissait par remonter dans le cadran du compte à rebours (section 08) sur
-// les écrans bas — « 44 JOURS » se retrouvait posé sur la Terre.
-const HORIZON_VISIBLE_PX = 190;
-const HORIZON_VISIBLE_VH = 0.15;
+// L'état "horizon" (rayon, centre, hauteur visible de l'arc) vit dans
+// globe-config.ts : le fil d'horizon de ChapterThread.tsx doit tracer le même
+// cercle pour que la ligne "devienne" la planète au passage de la section 04.
+// Voir le commentaire de ce fichier pour les deux plafonds et leurs raisons.
 
 // La sphère + sa lueur de bord (effet Fresnel) ne remplissent pas tout le
 // canvas 640×640 : il reste une fine marge autour (cf. réglages de
@@ -194,11 +175,9 @@ export default function GlobeBackground() {
         const restX = REST_STATE.xRatio * vw;
         const restY = REST_STATE.yRatio * vh;
 
-        const horizonRadius = Math.min(HORIZON_RADIUS_VW * vw, HORIZON_RADIUS_MAX_PX);
+        const { radius: horizonRadius, centerY: horizonY } = horizonGeometry(vw, vh);
         const horizonScale = (horizonRadius * 2) / (BASE_SIZE * GLOBE_FILL_RATIO);
         const horizonX = vw * 0.5;
-        const horizonVisible = Math.min(HORIZON_VISIBLE_PX, vh * HORIZON_VISIBLE_VH);
-        const horizonY = vh + horizonRadius - horizonVisible;
 
         const x = lerp(restX, horizonX, progress);
         const y = lerp(restY, horizonY, progress);
