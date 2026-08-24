@@ -26,6 +26,18 @@ const TITLE = "Le monde regarde l'Afrique comme un continent à financer.";
  *    debrief). Le retournement est en CSS et non en GSAP : c'est un état
  *    d'interaction, pas une animation d'entrée, et le CSS gère survol, focus
  *    clavier et `prefers-reduced-motion` sans code supplémentaire.
+ *
+ *    Deux réglages de fluidité à ne pas retirer (retour du 4e debrief, « le
+ *    mouvement n'est pas fluide ») :
+ *
+ *    - la courbe est `ease-flip`, pas `ease-reveal` : voir tailwind.config.ts,
+ *      l'expo-out des révélations expédiait le demi-tour en 150 ms puis
+ *      s'immobilisait pendant 300 ms ;
+ *    - `transform-gpu` + `will-change-transform` promeuvent la phrase sur sa
+ *      propre couche de composition. Sans ça le navigateur re-rastérise les
+ *      glyphes à chaque angle intermédiaire et les bords scintillent pendant
+ *      la rotation. `backface-visibility:hidden` supprime le tremblement d'un
+ *      demi-pixel au passage par 90°.
  */
 export default function Section02Hero({ start = true }: { start?: boolean }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -120,7 +132,7 @@ export default function Section02Hero({ start = true }: { start?: boolean }) {
         tabIndex={0}
         onClick={() => setIsTapped((v) => !v)}
         aria-label="Et si la réalité était exactement l'inverse ?"
-        className={`group font-display text-[clamp(1.5rem,4.2vw,3rem)] leading-tight max-w-3xl mt-6 uppercase text-terracota cursor-pointer transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:rotate-0 focus-visible:rotate-0 ${
+        className={`group font-display text-[clamp(1.5rem,4.2vw,3rem)] leading-tight max-w-3xl mt-6 uppercase text-terracota cursor-pointer transition-transform duration-700 ease-flip transform-gpu will-change-transform [backface-visibility:hidden] hover:rotate-0 focus-visible:rotate-0 ${
           isTapped ? "rotate-0" : "rotate-180"
         }`}
       >

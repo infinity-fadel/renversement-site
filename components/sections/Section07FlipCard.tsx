@@ -199,10 +199,18 @@ function FlippableCard({
             ? "Verso affiché — cliquer pour revenir au recto"
             : "Cliquer pour retourner la carte"
         }
-        className="relative w-full h-full text-left rounded-sm"
+        // La transition passe par les classes et non par `style` : elle
+        // partage ainsi le token `ease-flip` de la charte avec le demi-tour du
+        // hero (§6.3). L'ancienne courbe `cubic-bezier(0.16,1,0.3,1)` — celle
+        // des révélations — expédiait 93 % du retournement en 300 ms, puis
+        // rampait 500 ms de plus pour les 12 derniers degrés : lu comme un
+        // à-coup, pas comme un mouvement. Durée alignée sur le hero, même
+        // geste. `will-change-transform` promeut la carte sur sa propre
+        // couche : sans ça le texte, le monogramme et l'ombre portée sont
+        // re-rastérisés à chaque angle intermédiaire.
+        className="relative w-full h-full text-left rounded-sm transition-transform duration-700 ease-flip will-change-transform"
         style={{
           transformStyle: "preserve-3d",
-          transition: "transform 0.8s cubic-bezier(0.16,1,0.3,1)",
           transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
         }}
       >

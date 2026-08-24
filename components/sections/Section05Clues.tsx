@@ -165,7 +165,7 @@ export default function Section05Clues() {
               aria-label={`${clue.value} ${clue.label} — survoler pour voir l'illustration`}
               className="group relative h-80 [perspective:1400px] rounded-sm"
             >
-              <div className="relative w-full h-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-visible:[transform:rotateY(180deg)]">
+              <div className="relative w-full h-full transition-transform duration-700 ease-flip will-change-transform [transform-style:preserve-3d] group-hover:[transform:rotateY(180deg)] group-focus-visible:[transform:rotateY(180deg)]">
                 {/* Face avant — le chiffre et son anneau */}
                 <div className="absolute inset-0 [backface-visibility:hidden] flex flex-col items-center justify-center gap-5 border border-light-grey/10 px-4 sm:px-6 overflow-hidden">
                   <div

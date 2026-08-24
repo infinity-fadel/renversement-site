@@ -32,6 +32,14 @@ const config: Config = {
       },
       transitionTimingFunction: {
         reveal: "cubic-bezier(0.16, 1, 0.3, 1)",
+        // Demi-tour de la phrase du hero (§6.3). `reveal` est une expo-out :
+        // elle place 80 % du parcours dans ses 150 premières millisecondes.
+        // Invisible sur un décalage de quelques pixels — c'est son emploi —
+        // mais sur une rotation de 180° elle donne un à-coup sec (25° dans la
+        // toute première frame) suivi de 300 ms où plus rien ne bouge. Mesuré
+        // au debrief. `flip` démarre et se pose en douceur, donc le demi-tour
+        // occupe réellement sa durée au lieu d'être fini au quart.
+        flip: "cubic-bezier(0.65, 0, 0.35, 1)",
       },
     },
   },
