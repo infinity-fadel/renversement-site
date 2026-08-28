@@ -321,7 +321,14 @@ très utilisé.
 - Fichiers de la police Apollo absents.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
   ressources.
-- Aucun événement analytics du §12.1 n'est câblé.
+- **Mesure d'audience : le socle est posé, les événements ne le sont pas.**
+  `app/layout.tsx` injecte Google Tag Manager (amorce + repli `<noscript>`) et
+  le pixel Metricool, tous deux pilotés par `config/site.config.ts` et rendus
+  **uniquement** si leur identifiant est renseigné — `gtmId` vaut `null` par
+  défaut, donc GTM est inerte tant que `NEXT_PUBLIC_GTM_ID` n'est pas fourni.
+  Les événements personnalisés du §12.1 (soumission du formulaire, lecture de
+  la vidéo, activation du son…) restent **à câbler** : rien ne pousse encore
+  dans `dataLayer`.
 - Vidéo d'introduction : fichier non fourni. Le 3e debrief la situe **entre le
   hero (02) et la section 03** (et non plus entre 09 et 10 comme au debrief V1).
   `components/ui/IntroVideo.tsx` est monté à cet endroit dans `app/page.tsx` et
@@ -359,6 +366,32 @@ Démarrage automatique demandé par le client. Ce qui est réellement possible :
 - La piste source a été recoupée : elle tombait à −47 dB sur ses cinq dernières
   secondes, ce qui creusait un trou à chaque bouclage. Coupée à 238 s avec
   fondus symétriques.
+- **Piste écartée — la porte d'entrée sur le loader.** Techniquement, le seul
+  montage qui donne du son dès la première image est un loader qui s'arrête à
+  100 % et attend un clic « ENTRER » : ce clic fournit l'activation utilisateur
+  que le navigateur exige. Elle a été construite puis **retirée sur décision
+  client (Victoire)** : « ce n'est pas grave si l'utilisateur va activer
+  lui-même la musique ». Le loader se lève donc toujours seul après 1400 ms, et
+  le site est **silencieux à l'arrivée** — c'est assumé, pas un défaut à
+  corriger. Inutile de reproposer la porte : l'arbitrage est rendu.
+- **L'état du bouton vient des événements de l'élément audio, pas d'un
+  drapeau optimiste.** `isOn` était posé dans `start()` après un contrôle de
+  `el.paused` à 80 ms ; Chrome peut repasser en pause bien après ce délai, et
+  sur liaison lente `paused` vaut `false` pendant toute la mise en mémoire
+  tampon des 2,7 Mo. Le bouton affichait alors « en lecture » sur du silence.
+  On écoute désormais `playing` (et non `play`, qui se déclenche à l'appel de
+  la méthode et non quand le son sort), `pause` et `ended`. Les pauses
+  volontaires — vidéo en cours (`duckedRef`), onglet en arrière-plan
+  (`hiddenRef`) — sont exclues de cette synchronisation, sinon elles
+  éteindraient le bouton et la reprise ne se ferait plus.
+- **Le bouton porte un libellé visible à deux états** — « Activer le son » /
+  « Arrêter le son » — et non plus une icône seule. Arbitrage client rendu une
+  fois la contrainte des navigateurs comprise : le démarrage automatique ne
+  pouvant être garanti, c'est le libellé qui annonce au visiteur qu'une
+  bande-son existe. Le rond barré se lisait comme un son déjà coupé par le
+  site, pas comme une invitation. Ne pas revenir à l'icône nue. Le texte est en
+  `sr-only sm:not-sr-only` (et non `hidden sm:inline`) pour rester le nom
+  accessible du bouton sous `sm`, où seule l'icône s'affiche.
 
 ## Formulaire du Cercle
 

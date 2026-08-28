@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Montserrat, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { SITE_CONFIG, SITE_URL } from "@/config/site.config";
@@ -45,12 +46,71 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { gtmId, metricoolHash } = SITE_CONFIG;
+
   return (
     <html
       lang="fr"
       className={`${montserrat.variable} ${cormorantGaramond.variable}`}
     >
-      <body>{children}</body>
+      {/* Google Tag Manager — amorce du conteneur.
+          `afterInteractive` et non `beforeInteractive` : GTM n'a pas besoin de
+          précéder l'hydratation, et le faire retarderait le premier rendu d'un
+          site dont toute la promesse est l'entrée en matière. La balise n'est
+          rendue QUE si un identifiant est configuré : sans lui, le script
+          appellerait googletagmanager.com avec un `id=null` et échouerait à
+          chaque chargement. */}
+      {gtmId && (
+        <Script id="gtm-init" strategy="afterInteractive">
+          {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+})(window,document,'script','dataLayer','${gtmId}');`}
+        </Script>
+      )}
+
+      <body>
+        {/* Repli GTM sans JavaScript. Doit rester le tout premier élément du
+            <body>, c'est la position prescrite par Google. */}
+        {gtmId && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        )}
+
+        {children}
+
+        {/* Pixel de suivi Metricool. Balise `img` brute et non `next/image` :
+            c'est une balise de mesure, pas une illustration — l'optimiseur
+            réécrirait l'URL vers /_next/image et le suivi ne partirait jamais
+            chez Metricool.
+
+            Sorti du flux plutôt que masqué en `display:none` : certains
+            bloqueurs et quelques navigateurs anciens sautent le chargement des
+            images non affichées, ce qui ferait taire le pixel sans prévenir. */}
+        {metricoolHash && (
+          <img
+            src={`https://tracker.metricool.com/c3po.jpg?hash=${metricoolHash}`}
+            alt=""
+            aria-hidden="true"
+            width={1}
+            height={1}
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              opacity: 0,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+      </body>
     </html>
   );
 }

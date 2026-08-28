@@ -2,23 +2,26 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { horizonGeometry } from "./globe-config";
+import {
+  GLOBE_BASE_SIZE as BASE_SIZE,
+  GLOBE_FILL_RATIO,
+  GLOBE_REST_RADIUS_PX as REST_RADIUS_PX,
+  GLOBE_REST_STATE as REST_STATE,
+  globeLimb,
+  globeProgress,
+} from "./globe-config";
 
 const GlobeThree = dynamic(() => import("./GlobeThree"), { ssr: false });
 
-// Taille native fixe du canvas WebGL — l'agrandissement visuel se fait par
-// transform CSS (scale), pas en redimensionnant le rendu lui-même.
-const BASE_SIZE = 640;
 
 // État "repos" (pendant la section 04), en fraction de la largeur/hauteur
 // du viewport — calé sur la position/taille qu'occupait l'ancien globe
 // inline de cette section.
-const REST_STATE = { xRatio: 0.74, yRatio: 0.48, scale: 1 };
 
 // L'état "horizon" (rayon, centre, hauteur visible de l'arc) vit dans
-// globe-config.ts : le fil d'horizon de ChapterThread.tsx doit tracer le même
-// cercle pour que la ligne "devienne" la planète au passage de la section 04.
-// Voir le commentaire de ce fichier pour les deux plafonds et leurs raisons.
+// globe-config.ts, avec la décomposition de la descente (globeProgress puis
+// globeLimb). Voir le commentaire de ce fichier pour les deux plafonds — rayon
+// composé et hauteur d'arc visible — et leurs raisons.
 
 // La sphère + sa lueur de bord (effet Fresnel) ne remplissent pas tout le
 // canvas 640×640 : il reste une fine marge autour (cf. réglages de
@@ -27,11 +30,9 @@ const REST_STATE = { xRatio: 0.74, yRatio: 0.48, scale: 1 };
 // la caméra, qui ignore la lueur et sous-évaluait ce ratio à 0.76 — d'où
 // un globe bien plus gros que prévu à l'état horizon, largement au-delà
 // des HORIZON_VISIBLE_PX ciblés).
-const GLOBE_FILL_RATIO = 0.9;
 
 // Rayon visible du globe à l'état de repos : le disque n'occupe pas tout le
 // canvas (cf. GLOBE_FILL_RATIO plus bas), d'où ce calcul plutôt que BASE_SIZE / 2.
-const REST_RADIUS_PX = 288;
 
 // Légendes affichées uniquement pendant la section 04 (§6.5), positionnées en
 // pixels autour du centre du globe dans son état "REST_STATE" — elles ne
@@ -169,19 +170,15 @@ export default function GlobeBackground() {
         // plein viewport de scroll supplémentaire (progress=1) ; au-delà,
         // ça reste bloqué à 1 (stable pour toutes les sections suivantes)
         // tant qu'on ne remonte pas.
-        const rawProgress = -top / vh;
-        const progress = Math.min(1, Math.max(0, rawProgress));
+        // Progression et géométrie viennent de globe-config plutôt que d'être
+        // recalculées ici : la descente y est décrite une fois, testée, et
+        // reste lisible hors du bruit de la boucle de scroll.
+        const progress = globeProgress(top, vh);
+        const limb = globeLimb(vw, vh, progress);
 
-        const restX = REST_STATE.xRatio * vw;
-        const restY = REST_STATE.yRatio * vh;
-
-        const { radius: horizonRadius, centerY: horizonY } = horizonGeometry(vw, vh);
-        const horizonScale = (horizonRadius * 2) / (BASE_SIZE * GLOBE_FILL_RATIO);
-        const horizonX = vw * 0.5;
-
-        const x = lerp(restX, horizonX, progress);
-        const y = lerp(restY, horizonY, progress);
-        const scale = lerp(REST_STATE.scale, horizonScale, progress);
+        const x = lerp(REST_STATE.xRatio * vw, vw * 0.5, progress);
+        const y = limb.centerY;
+        const scale = limb.scale;
 
         globeEl.style.opacity = visible ? "1" : "0";
         globeEl.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`;

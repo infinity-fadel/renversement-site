@@ -3,7 +3,7 @@
 import { useState } from "react";
 import StarfieldBackground from "@/components/ui/StarfieldBackground";
 import GlobeBackground from "@/components/ui/GlobeBackground";
-import ChapterThread from "@/components/ui/ChapterThread";
+import ReadingLight from "@/components/ui/ReadingLight";
 import Nav from "@/components/Nav";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import Section00Loader from "@/components/sections/Section00Loader";
@@ -26,9 +26,7 @@ export default function Home() {
     <>
       <StarfieldBackground />
       <GlobeBackground />
-      {/* Après le globe : à `-z-10` égal, c'est l'ordre du DOM qui décide, et
-          le fil doit passer devant le limbe pour le prolonger — pas dessous. */}
-      <ChapterThread />
+      <ReadingLight />
 
       {!isLoaderDone && (
         <Section00Loader onDone={() => setIsLoaderDone(true)} />

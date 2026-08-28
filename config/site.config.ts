@@ -118,7 +118,23 @@ export const SITE_CONFIG = {
     "/video/mythe-1-afrique-pauvre.mp4") as string | null,
   // Image d'attente du lecteur, affichée avant lecture (facultative).
   introVideoPoster: (process.env.NEXT_PUBLIC_INTRO_VIDEO_POSTER?.trim() ||
-    null) as string | null,
+    "/images/intro-poster.webp") as string | null,
+  // -------------------------------------------------------------------------
+  // Mesure d'audience
+  // -------------------------------------------------------------------------
+  // Identifiant du conteneur Google Tag Manager (format `GTM-XXXXXXX`).
+  // Tant qu'il vaut `null`, AUCUN script GTM n'est injecté : pas de requête
+  // vers googletagmanager.com, pas de `dataLayer`. Le renseigner suffit à
+  // tout activer. Le préfixe NEXT_PUBLIC_ est ici normal et sans risque —
+  // un identifiant de conteneur est public par construction, il figure en
+  // clair dans le HTML de tous les sites qui l'utilisent.
+  gtmId: (process.env.NEXT_PUBLIC_GTM_ID?.trim() || null) as string | null,
+
+  // Empreinte du pixel de suivi Metricool. Même logique : `null` ⇒ pas de
+  // pixel du tout.
+  metricoolHash: (process.env.NEXT_PUBLIC_METRICOOL_HASH?.trim() ||
+    "dc67bfb95dbe0747619e562bb6f54c59") as string | null,
+
   // Feature flags simples — bascule facile vers la V2 sans redéploiement lourd
   features: {
     countdown: true,
