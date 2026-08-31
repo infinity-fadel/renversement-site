@@ -322,13 +322,18 @@ très utilisé.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
   ressources.
 - **Mesure d'audience : le socle est posé, les événements ne le sont pas.**
-  `app/layout.tsx` injecte Google Tag Manager (amorce + repli `<noscript>`) et
-  le pixel Metricool, tous deux pilotés par `config/site.config.ts` et rendus
-  **uniquement** si leur identifiant est renseigné — `gtmId` vaut `null` par
-  défaut, donc GTM est inerte tant que `NEXT_PUBLIC_GTM_ID` n'est pas fourni.
-  Les événements personnalisés du §12.1 (soumission du formulaire, lecture de
-  la vidéo, activation du son…) restent **à câbler** : rien ne pousse encore
-  dans `dataLayer`.
+  `app/layout.tsx` injecte Google Tag Manager (amorce + repli `<noscript>`), le
+  pixel Meta (amorce `fbq` + repli `<noscript>`) et le pixel Metricool, tous
+  pilotés par `config/site.config.ts` et rendus **uniquement** si leur
+  identifiant est renseigné. Les trois identifiants du client sont désormais
+  codés en valeur par défaut (`GTM-TMF7TVTG`, pixel Meta `1090469960114634`,
+  empreinte Metricool) pour que la mesure parte même sans variable configurée
+  chez l'hébergeur ; `NEXT_PUBLIC_GTM_ID` / `NEXT_PUBLIC_META_PIXEL_ID` /
+  `NEXT_PUBLIC_METRICOOL_HASH` restent prioritaires — les définir vides coupe
+  la balise correspondante (utile en recette). Les événements personnalisés du
+  §12.1 (soumission du formulaire, lecture de la vidéo, activation du son…)
+  restent **à câbler** : rien ne pousse encore dans `dataLayer`, et le pixel
+  Meta n'envoie que `PageView`.
 - Vidéo d'introduction : fichier non fourni. Le 3e debrief la situe **entre le
   hero (02) et la section 03** (et non plus entre 09 et 10 comme au debrief V1).
   `components/ui/IntroVideo.tsx` est monté à cet endroit dans `app/page.tsx` et

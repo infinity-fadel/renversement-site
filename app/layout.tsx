@@ -46,7 +46,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { gtmId, metricoolHash } = SITE_CONFIG;
+  const { gtmId, metaPixelId, metricoolHash } = SITE_CONFIG;
 
   return (
     <html
@@ -70,6 +70,27 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         </Script>
       )}
 
+      {/* Pixel Meta (Facebook/Instagram) — amorce officielle, `afterInteractive`
+          pour la même raison que GTM : la mesure n'a pas à précéder
+          l'hydratation. `fbq('track','PageView')` est appelé ici et une seule
+          fois ; le site étant en page unique sans routing, il n'y a pas de
+          changement de route à re-signaler. Rendu uniquement si un
+          identifiant est configuré. */}
+      {metaPixelId && (
+        <Script id="meta-pixel-init" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '${metaPixelId}');
+fbq('track', 'PageView');`}
+        </Script>
+      )}
+
       <body>
         {/* Repli GTM sans JavaScript. Doit rester le tout premier élément du
             <body>, c'est la position prescrite par Google. */}
@@ -80,6 +101,21 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               height="0"
               width="0"
               style={{ display: "none", visibility: "hidden" }}
+            />
+          </noscript>
+        )}
+
+        {/* Repli sans JavaScript du pixel Meta. `img` brute et non
+            `next/image` : l'optimiseur réécrirait l'URL vers /_next/image et
+            l'appel ne partirait jamais chez Meta. */}
+        {metaPixelId && (
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: "none" }}
+              alt=""
+              src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
             />
           </noscript>
         )}

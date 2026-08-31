@@ -128,7 +128,22 @@ export const SITE_CONFIG = {
   // tout activer. Le préfixe NEXT_PUBLIC_ est ici normal et sans risque —
   // un identifiant de conteneur est public par construction, il figure en
   // clair dans le HTML de tous les sites qui l'utilisent.
-  gtmId: (process.env.NEXT_PUBLIC_GTM_ID?.trim() || null) as string | null,
+  //
+  // Conteneur fourni par le client (4e retour) : il est donc codé ici comme
+  // valeur par défaut, au même titre que l'empreinte Metricool, pour que la
+  // mesure parte même si la variable n'est pas configurée chez l'hébergeur.
+  // NEXT_PUBLIC_GTM_ID reste prioritaire (bascule vers un autre conteneur,
+  // ou chaîne vide pour couper la mesure sur un environnement de recette).
+  gtmId: (process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-TMF7TVTG") as
+    | string
+    | null,
+
+  // Identifiant du pixel Meta (Facebook/Instagram), format numérique.
+  // Même contrat que les deux précédents : `null` ⇒ aucun script, aucune
+  // requête vers connect.facebook.net. Public par construction lui aussi —
+  // il figure en clair dans le HTML de tous les sites qui l'utilisent.
+  metaPixelId: (process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() ||
+    "1090469960114634") as string | null,
 
   // Empreinte du pixel de suivi Metricool. Même logique : `null` ⇒ pas de
   // pixel du tout.
