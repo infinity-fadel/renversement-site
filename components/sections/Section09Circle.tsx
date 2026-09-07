@@ -3,14 +3,16 @@
 import { useState, FormEvent } from "react";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { SITE_CONFIG } from "@/config/site.config";
+import { subscribeToCircle } from "@/lib/formsubmit";
 
 type FormStatus = "idle" | "submitting" | "success" | "error" | "duplicate";
 
 /**
  * Section 09 — Le Cercle (§6.10)
- * Formulaire fonctionnel côté UI ; l'appel réseau pointe vers
- * /api/subscribe (Route Handler à créer lors du chapitre "formulaire + CRM").
- * Validation, anti double-soumission et messages d'état sont déjà en place.
+ * L'envoi part du NAVIGATEUR vers FormSubmit (voir lib/formsubmit.ts, qui
+ * documente pourquoi le relais serveur a été abandonné : Cloudflare bloque
+ * les IP de datacenter). Validation, champ-piège, anti double-soumission et
+ * messages d'état sont donc désormais entièrement côté client.
  * Champs nom+e-mail conservés (conforme au texte du cahier des charges :
  * "Nom et prénom obligatoires") même si la maquette de référence ne montre
  * que l'e-mail — décision confirmée explicitement, pas une divergence.
@@ -36,34 +38,29 @@ export default function Section09Circle() {
       return;
     }
 
+    // Champ-piège : invisible pour un humain, rempli par les robots qui
+    // complètent aveuglément tous les champs. On affiche « succès » sans rien
+    // envoyer — un refus explicite apprendrait au robot à le contourner.
+    // Ce contrôle était côté serveur ; il suit l'envoi côté client.
+    if (honeypot) {
+      setStatus("success");
+      form.reset();
+      return;
+    }
+
     setStatus("submitting");
     setErrorMsg(null);
 
-    try {
-      const res = await fetch("/api/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          consent,
-          website: honeypot,
-          source: "site-v1",
-        }),
-      });
+    const result = await subscribeToCircle({ name, email, source: "site-v1" });
 
-      if (res.status === 409) {
-        setStatus("duplicate");
-        return;
-      }
-      if (!res.ok) throw new Error("request_failed");
-
-      setStatus("success");
-      form.reset();
-    } catch {
+    if (!result.ok) {
       setStatus("error");
       setErrorMsg("Une erreur technique est survenue. Merci de réessayer.");
+      return;
     }
+
+    setStatus("success");
+    form.reset();
   };
 
   return (
@@ -105,7 +102,7 @@ export default function Section09Circle() {
             >
               {/* Champ-piège : invisible, hors tabulation, ignoré des lecteurs
                   d'écran. Un robot qui remplit tout le formulaire le remplira
-                  aussi, et /api/subscribe écartera la soumission. */}
+                  aussi, et la soumission sera écartée avant tout envoi. */}
               <input
                 type="text"
                 name="website"

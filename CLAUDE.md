@@ -99,8 +99,9 @@ doublon accidentel.
 (domaine, date, feature flags, taglines) — les composants importent d'ici,
 jamais de valeurs en dur.
 
-- `SITE_DOMAIN` ← `NEXT_PUBLIC_SITE_DOMAIN`, défaut **`lerenversement.com`**
-  (domaine de lancement retenu, DNS sur Vercel et boîte `contact@` associée).
+- `SITE_DOMAIN` ← `NEXT_PUBLIC_SITE_DOMAIN`, défaut **`www.lerenversement.com`**
+  — la forme canonique : l'apex répond 308 vers le `www`, donc les métadonnées
+  et l'Open Graph doivent porter le `www` et non une URL qui redirige.
   Le déploiement se fait au push sans variable posée chez l'hébergeur : cette
   valeur par défaut est donc bien le domaine servi en production, pas une
   attente. `renversement.africa` était le repli §22 précédent.
@@ -274,10 +275,9 @@ principal — ne pas y ajouter d'import lourd.
 
 ### Formulaire (section 09)
 
-`Section09Circle.tsx` poste vers `/api/subscribe`, **qui n'existe pas** (pas
-de dossier `app/api/`). Le client gère déjà `idle/submitting/success/error/duplicate`
-avec la convention **409 = doublon**. À l'implémentation du route handler,
-respecter ce contrat de code de statut plutôt que modifier le client.
+`Section09Circle.tsx` appelle `lib/formsubmit.ts`, qui poste directement vers
+FormSubmit depuis le navigateur — voir « Formulaire du Cercle » plus bas pour
+les raisons et les pièges. Aucune route serveur n'est impliquée.
 
 ### Polices
 
@@ -404,44 +404,39 @@ Démarrage automatique demandé par le client. Ce qui est réellement possible :
 
 ## Formulaire du Cercle
 
-`app/api/subscribe/route.ts` relaie vers **FormSubmit**. L'appel part du serveur,
-jamais du navigateur : l'adresse de destination resterait sinon dans le bundle
-client, exploitable par n'importe qui pour spammer la boîte.
+L'envoi part du **navigateur** vers FormSubmit (`lib/formsubmit.ts`), appelé
+par `Section09Circle.tsx`. Il n'y a **plus de route serveur** : `app/api/` a
+été supprimé le 7 septembre 2026.
 
-- Destination : la boîte **`contact@lerenversement.com`** du client, désignée
-  dans le code par son **jeton** FormSubmit (`FALLBACK_TARGET`) et non par
-  l'adresse — celle-ci ne transite donc ni dans le code appelant ni dans l'URL
-  appelée (elle reste nommée ici, en documentation). Ce jeton est
-  le repli codé dans le route handler, même logique que `LAUNCH_DATE` et les
-  identifiants de mesure d'audience : le site doit marcher sans configuration
-  chez l'hébergeur. Un repli serveur n'entame pas la propriété protégée ici —
-  il ne part pas dans le bundle client.
-- Variable **`FORMSUBMIT_TARGET`** (adresse ou jeton), prioritaire sur ce
-  repli. Sans préfixe `NEXT_PUBLIC_`, volontairement. Lue avec `||` : une
-  variable vide chez Vercel retombe sur le repli plutôt que d'appeler
-  FormSubmit avec une chaîne vide.
-- **Le formulaire est activé** (4 septembre 2026) — le piège de mise en service
-  est passé. Toute NOUVELLE destination devra repasser par la même étape : la
-  première soumission déclenche un e-mail d'activation à valider, et avant le
-  clic l'API répond 502 `upstream_failed`.
-- **FormSubmit refuse toute requête sans en-tête `Referer`.** Un navigateur le
-  pose seul, un `fetch` serveur-à-serveur non — d'où le message trompeur
-  « Make sure you open this page through a web server… », qui parle en réalité
-  d'un en-tête manquant et pas du serveur local. C'était la panne du premier
-  branchement.
-- **`FORMSUBMIT_ORIGIN` est figé et ne doit pas être branché sur `SITE_URL`**,
-  même si les deux valeurs coïncident. L'activation est indexée par couple
-  (destinataire, Referer) : vérifié, le même jeton avec un Referer non activé
-  repart en « This form needs Activation ». Le brancher sur `SITE_URL` ferait
-  tomber les inscriptions en 502 silencieusement au prochain changement de
-  domaine. **Deux domaines sont activés** — `lerenversement.com` (valeur
-  courante) et `renversement.africa` — chacun servant de filet à l'autre.
-- `success` est renvoyé en **chaîne** (`"true"`) par FormSubmit, pas en booléen.
-- Champ-piège `website` dans le formulaire : rempli ⇒ on répond 200 sans rien
-  relayer. Un refus explicite apprendrait au robot à le contourner.
-- **FormSubmit ne déduplique pas.** La branche 409 → « déjà inscrite » du client
-  est donc inatteignable en l'état ; elle est conservée pour le jour où un vrai
-  CRM prendra le relais.
+- **Pourquoi le relais serveur a été abandonné.** FormSubmit est derrière
+  Cloudflare, qui filtre sur l'appelant. Le même appel, en-têtes identiques,
+  passe en 200 depuis une IP résidentielle et repart en **403 depuis Vercel**,
+  avec une page HTML de blocage (donc un message vide si on la lit en JSON).
+  Aucun réglage d'en-tête n'y change rien — la requête doit partir d'une IP de
+  visiteur. Inutile de reproposer un route handler : l'essai a été fait.
+- **Le jeton FormSubmit est dans le bundle client, donc public.** Contrepartie
+  assumée, arbitrage client : c'est le mode d'emploi normal de FormSubmit et
+  le rôle même du jeton — l'ADRESSE (`contact@lerenversement.com`) n'apparaît
+  ni dans le code ni dans l'URL appelée. Le risque réel est qu'un tiers s'en
+  serve pour écrire dans la boîte. L'alternative écartée était un vrai service
+  d'envoi (Resend, Brevo, §9.3), qui imposerait une clé d'API donc une variable
+  chez l'hébergeur — or le déploiement se fait au push, sans configuration.
+- **L'activation est indexée par couple (destinataire, Referer)**, et le
+  `Referer` est maintenant posé par le navigateur : c'est un en-tête interdit
+  en `fetch`, **impossible à surcharger**. Le domaine réellement servi doit
+  donc être activé. Domaines activés : `www.lerenversement.com` (le canonique —
+  l'apex redirige en 308 vers lui), `lerenversement.com`, `renversement.africa`.
+  Tout nouveau domaine exige un clic dans un e-mail reçu sur la boîte du client.
+- **Un refus arrive en HTTP 200.** `response.ok` ne suffit pas : il faut lire
+  le corps, et `success` y est une **chaîne** (`"true"`), pas un booléen. La
+  réponse est lue en texte puis parsée, sans quoi un blocage Cloudflare (du
+  HTML) produit une erreur vide et indiagnosticable.
+- Champ-piège `website` : rempli ⇒ on affiche « succès » sans rien envoyer.
+  Ce contrôle est passé côté client avec l'envoi. Un refus explicite
+  apprendrait au robot à le contourner.
+- **FormSubmit ne déduplique pas**, et il n'y a plus de code 409 nulle part :
+  la branche `duplicate` de `Section09Circle.tsx` est désormais inatteignable
+  par construction. Conservée pour le jour où un vrai CRM prendra le relais.
 
 ## Gouttière latérale et indicateur de progression
 

@@ -32,8 +32,8 @@ npm run dev
   respect de `prefers-reduced-motion`, interactions clavier sur les
   composants interactifs (bascule, flip card, rotation).
 - **Formulaire section 09** fonctionnel de bout en bout : validation côté
-  serveur, champ-piège anti-robot et relais des inscriptions par e-mail via
-  FormSubmit (`app/api/subscribe/route.ts`).
+  champ-piège anti-robot et envoi des inscriptions par e-mail via FormSubmit
+  (`lib/formsubmit.ts`, appelé depuis le navigateur).
 
 ## Ce qu'il reste à faire (prochaines itérations)
 
@@ -47,10 +47,10 @@ npm run dev
    Le setup GSAP/ScrollTrigger partagé est dans `lib/gsap.ts`. Reste
    ouvert : affiner le flip de la section 07 (déjà fonctionnel en CSS pur)
    si un rendu plus riche est souhaité.
-3. **API `/api/subscribe`** — en place et **opérationnelle** : relais
-   FormSubmit vers `contact@lerenversement.com`, formulaire activé et testé
-   de bout en bout (surchargeable par `FORMSUBMIT_TARGET`). Le passage à un
-   vrai CRM (Brevo, Mailchimp…) reste ouvert §9.3.
+3. **Inscriptions** — opérationnelles : envoi direct du navigateur vers
+   FormSubmit (`lib/formsubmit.ts`), destination `contact@lerenversement.com`.
+   Le relais serveur a été retiré, Cloudflare bloquant les IP de Vercel. Le
+   passage à un vrai CRM (Brevo, Mailchimp…) reste ouvert §9.3.
 4. **Section 00** : le préchargement est simulé (timer) ; à remplacer par un
    vrai suivi de chargement des ressources critiques si besoin.
 5. **Vidéo** entre « Le Cercle » et « Phrase finale » (debrief V1) — fichier

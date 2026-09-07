@@ -28,7 +28,14 @@
 // Domaine de lancement retenu. Ce n'est plus un repli d'attente : le site est
 // déployé automatiquement au push et aucune variable n'est posée chez
 // l'hébergeur, donc cette valeur EST le domaine servi en production.
-const FALLBACK_SITE_DOMAIN = "lerenversement.com";
+//
+// Avec le « www », car c'est la forme CANONIQUE : vérifié, l'apex
+// lerenversement.com répond 308 vers www.lerenversement.com. Pointer les
+// métadonnées et l'Open Graph sur une URL qui redirige n'a pas d'intérêt.
+// Si le sens de la redirection est un jour inversé, il faut changer cette
+// valeur ET faire activer le nouveau domaine chez FormSubmit (le Referer du
+// navigateur devient alors l'apex, voir lib/formsubmit.ts).
+const FALLBACK_SITE_DOMAIN = "www.lerenversement.com";
 
 export const SITE_DOMAIN = (
   process.env.NEXT_PUBLIC_SITE_DOMAIN?.trim() || FALLBACK_SITE_DOMAIN
