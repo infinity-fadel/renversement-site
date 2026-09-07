@@ -11,10 +11,17 @@ import { SITE_CONFIG } from "@/config/site.config";
  *    confiance à ce que le navigateur envoie ;
  *  - le contrat de réponse attendu par Section09Circle.tsx reste inchangé.
  *
- * Configuration : définir `FORMSUBMIT_TARGET` (sans préfixe NEXT_PUBLIC_, c'est
- * une variable serveur) avec l'adresse e-mail de destination, ou le jeton que
+ * Configuration : `FORMSUBMIT_TARGET` (sans préfixe NEXT_PUBLIC_, c'est une
+ * variable serveur) reçoit l'adresse e-mail de destination, ou le jeton que
  * FormSubmit fournit après la première activation — le jeton est préférable,
  * il évite d'exposer l'adresse même côté serveur.
+ *
+ * L'adresse validée par le client (contact@lerenversement.com) est le repli
+ * codé ici, comme la date de lancement et les identifiants de mesure d'audience
+ * dans config/site.config.ts : le formulaire doit fonctionner même si la
+ * variable n'est pas configurée chez l'hébergeur, sinon chaque inscription
+ * part en 500. Ce repli reste côté serveur — il ne part pas dans le bundle
+ * client, la propriété que protège l'absence de NEXT_PUBLIC_.
  *
  * ATTENTION à la première mise en service : FormSubmit n'envoie rien tant que
  * l'adresse n'a pas été confirmée. La toute première soumission déclenche un
@@ -23,6 +30,30 @@ import { SITE_CONFIG } from "@/config/site.config";
  */
 
 const FORMSUBMIT_ENDPOINT = "https://formsubmit.co/ajax/";
+
+// Jeton FormSubmit de la boîte contact@lerenversement.com, obtenu après
+// activation. Préféré à l'adresse en clair : le dépôt ne contient donc aucune
+// adresse e-mail exploitable, et l'URL appelée n'en transporte pas non plus.
+// Surchargé par FORMSUBMIT_TARGET (autre jeton, ou boîte de recette).
+const FALLBACK_TARGET = "393e4933fa84c67511c32586134bbb7d";
+
+// Domaine sous lequel le formulaire a été ACTIVÉ chez FormSubmit.
+//
+// NE PAS remplacer par SITE_URL, même si les deux valeurs coïncident
+// aujourd'hui. FormSubmit indexe l'activation par couple (destinataire,
+// Referer) : vérifié, le même jeton envoyé avec un Referer non activé repart
+// en « This form needs Activation » et l'inscription est perdue. Branché sur
+// SITE_URL, le formulaire tomberait donc en 502 silencieusement au prochain
+// changement de domaine, jusqu'à ce que quelqu'un reclique un lien
+// d'activation reçu dans une boîte à laquelle il n'a pas forcément accès.
+//
+// Cet en-tête n'est pas une vérité de navigateur (l'appel est
+// serveur-à-serveur) : c'est uniquement la clé d'enregistrement chez
+// FormSubmit. Elle doit rester figée et valoir un domaine activé.
+//
+// Domaines activés à ce jour, tous deux vérifiés : lerenversement.com et
+// renversement.africa. L'un est donc le filet de l'autre.
+const FORMSUBMIT_ORIGIN = "https://lerenversement.com";
 
 // Volontairement permissive : le rôle de cette expression est d'écarter les
 // saisies manifestement invalides, pas de statuer sur la validité réelle d'une
@@ -33,15 +64,9 @@ const MAX_NAME = 120;
 const MAX_EMAIL = 200;
 
 export async function POST(request: Request) {
-  const target = process.env.FORMSUBMIT_TARGET;
-  if (!target) {
-    // Panne de configuration, pas erreur du visiteur : on la journalise et on
-    // renvoie 500 pour que le client affiche son message d'erreur technique.
-    console.error(
-      "[/api/subscribe] FORMSUBMIT_TARGET n'est pas défini — inscription impossible."
-    );
-    return NextResponse.json({ error: "not_configured" }, { status: 500 });
-  }
+  // `||` et non `??` : chez Vercel, une variable déclarée sans valeur arrive
+  // comme chaîne vide et non comme `undefined` — même piège que SITE_DOMAIN.
+  const target = process.env.FORMSUBMIT_TARGET?.trim() || FALLBACK_TARGET;
 
   let body: unknown;
   try {
@@ -81,6 +106,13 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
+          // FormSubmit REFUSE toute requête sans `Referer` : il répond 200
+          // avec success:"false" et le message trompeur « Make sure you open
+          // this page through a web server… », qui laisse croire à un
+          // problème de serveur local alors qu'il manque juste l'en-tête.
+          // Un navigateur le pose tout seul ; un fetch serveur-à-serveur non.
+          Referer: `${FORMSUBMIT_ORIGIN}/`,
+          Origin: FORMSUBMIT_ORIGIN,
         },
         body: JSON.stringify({
           Nom: name,

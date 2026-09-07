@@ -99,7 +99,11 @@ doublon accidentel.
 (domaine, date, feature flags, taglines) — les composants importent d'ici,
 jamais de valeurs en dur.
 
-- `SITE_DOMAIN` ← `NEXT_PUBLIC_SITE_DOMAIN`, repli `renversement.africa`.
+- `SITE_DOMAIN` ← `NEXT_PUBLIC_SITE_DOMAIN`, défaut **`lerenversement.com`**
+  (domaine de lancement retenu, DNS sur Vercel et boîte `contact@` associée).
+  Le déploiement se fait au push sans variable posée chez l'hébergeur : cette
+  valeur par défaut est donc bien le domaine servi en production, pas une
+  attente. `renversement.africa` était le repli §22 précédent.
 - `LAUNCH_DATE` — **2 octobre 2026** (date validée au debrief V1), codée en
   dur comme valeur par défaut et surchargeable par
   `NEXT_PUBLIC_LAUNCH_DATE_ISO`. Elle est volontairement dans le code et non
@@ -404,12 +408,34 @@ Démarrage automatique demandé par le client. Ce qui est réellement possible :
 jamais du navigateur : l'adresse de destination resterait sinon dans le bundle
 client, exploitable par n'importe qui pour spammer la boîte.
 
-- Variable **`FORMSUBMIT_TARGET`** (adresse ou jeton FormSubmit). Sans préfixe
-  `NEXT_PUBLIC_`, volontairement. Non définie ⇒ 500 `not_configured`.
-- **FormSubmit n'envoie rien tant que l'adresse n'est pas confirmée** : la toute
-  première soumission déclenche un e-mail d'activation à valider. Avant ça, le
-  formulaire répond « succès » et rien n'arrive — c'est le piège classique de
-  mise en service.
+- Destination : la boîte **`contact@lerenversement.com`** du client, désignée
+  dans le code par son **jeton** FormSubmit (`FALLBACK_TARGET`) et non par
+  l'adresse — celle-ci ne transite donc ni dans le code appelant ni dans l'URL
+  appelée (elle reste nommée ici, en documentation). Ce jeton est
+  le repli codé dans le route handler, même logique que `LAUNCH_DATE` et les
+  identifiants de mesure d'audience : le site doit marcher sans configuration
+  chez l'hébergeur. Un repli serveur n'entame pas la propriété protégée ici —
+  il ne part pas dans le bundle client.
+- Variable **`FORMSUBMIT_TARGET`** (adresse ou jeton), prioritaire sur ce
+  repli. Sans préfixe `NEXT_PUBLIC_`, volontairement. Lue avec `||` : une
+  variable vide chez Vercel retombe sur le repli plutôt que d'appeler
+  FormSubmit avec une chaîne vide.
+- **Le formulaire est activé** (4 septembre 2026) — le piège de mise en service
+  est passé. Toute NOUVELLE destination devra repasser par la même étape : la
+  première soumission déclenche un e-mail d'activation à valider, et avant le
+  clic l'API répond 502 `upstream_failed`.
+- **FormSubmit refuse toute requête sans en-tête `Referer`.** Un navigateur le
+  pose seul, un `fetch` serveur-à-serveur non — d'où le message trompeur
+  « Make sure you open this page through a web server… », qui parle en réalité
+  d'un en-tête manquant et pas du serveur local. C'était la panne du premier
+  branchement.
+- **`FORMSUBMIT_ORIGIN` est figé et ne doit pas être branché sur `SITE_URL`**,
+  même si les deux valeurs coïncident. L'activation est indexée par couple
+  (destinataire, Referer) : vérifié, le même jeton avec un Referer non activé
+  repart en « This form needs Activation ». Le brancher sur `SITE_URL` ferait
+  tomber les inscriptions en 502 silencieusement au prochain changement de
+  domaine. **Deux domaines sont activés** — `lerenversement.com` (valeur
+  courante) et `renversement.africa` — chacun servant de filet à l'autre.
 - `success` est renvoyé en **chaîne** (`"true"`) par FormSubmit, pas en booléen.
 - Champ-piège `website` dans le formulaire : rempli ⇒ on répond 200 sans rien
   relayer. Un refus explicite apprendrait au robot à le contourner.

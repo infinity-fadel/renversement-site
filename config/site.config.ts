@@ -25,7 +25,10 @@
 // arrive comme chaîne vide, pas comme `undefined`. `??` la laissait passer,
 // SITE_URL valait alors « https:// » et `new URL()` dans app/layout.tsx faisait
 // échouer le build entier (« TypeError: Invalid URL », collecte de /_not-found).
-const FALLBACK_SITE_DOMAIN = "renversement.africa"; // repli tant que le domaine définitif n'est pas choisi (§22)
+// Domaine de lancement retenu. Ce n'est plus un repli d'attente : le site est
+// déployé automatiquement au push et aucune variable n'est posée chez
+// l'hébergeur, donc cette valeur EST le domaine servi en production.
+const FALLBACK_SITE_DOMAIN = "lerenversement.com";
 
 export const SITE_DOMAIN = (
   process.env.NEXT_PUBLIC_SITE_DOMAIN?.trim() || FALLBACK_SITE_DOMAIN
