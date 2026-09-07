@@ -111,7 +111,11 @@ jamais de valeurs en dur.
   dans la seule variable d'environnement : la date est publique et figée, et le
   site doit décompter juste même sans configuration chez l'hébergeur.
 - `CAMPAIGN_START_DATE` ← `NEXT_PUBLIC_CAMPAIGN_START_ISO`, défaut
-  2026-08-17. Sert **uniquement** d'échelle à l'anneau de progression du
+  **2026-09-07** (recalé le 7 septembre 2026 : jour du lancement de la
+  communication). À lire comme « le jour où le public voit le site », pas comme
+  le début du projet — c'est ce qui fait partir l'anneau plein. Avec l'ancienne
+  valeur du 17 août, le premier visiteur découvrait un anneau déjà vidé à 47 %.
+  À rerégler si le partage est repoussé. Sert **uniquement** d'échelle à l'anneau de progression du
   compte à rebours : `durationHours` en est dérivé. Sans cette notion, l'anneau
   restait calé sur une fenêtre fixe de 120 h et, avec une révélation à plus de
   40 jours, serait resté plein et immobile pendant des semaines.

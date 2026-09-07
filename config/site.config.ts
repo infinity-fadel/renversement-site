@@ -90,7 +90,17 @@ export const LAUNCH_DATE: Date = parseDateEnv(
 // était calé sur une fenêtre fixe de 120 h : avec une révélation à plus de
 // 40 jours, il serait resté plein et parfaitement immobile pendant des
 // semaines, puis n'aurait bougé que dans les 5 derniers jours.
-const DEFAULT_CAMPAIGN_START_ISO = "2026-08-17T00:00:00Z";
+//
+// Recalé au 7 septembre 2026, jour où la communication démarre réellement.
+// L'ancienne valeur (17 août) était une date de préparation interne : le site
+// n'ayant pas été partagé avant, l'anneau se serait présenté à moitié vidé au
+// tout premier regard du public — il montrait 53 %. Cette date n'est donc pas
+// « le début du projet » mais LE JOUR OÙ LE PUBLIC VOIT LE SITE : c'est la
+// seule lecture qui fasse partir l'anneau plein.
+//
+// À rerégler si le partage est repoussé, sans quoi le même décalage
+// réapparaîtra.
+const DEFAULT_CAMPAIGN_START_ISO = "2026-09-07T00:00:00Z";
 
 export const CAMPAIGN_START_DATE: Date = parseDateEnv(
   process.env.NEXT_PUBLIC_CAMPAIGN_START_ISO,
