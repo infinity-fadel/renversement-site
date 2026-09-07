@@ -113,6 +113,17 @@ export async function POST(request: Request) {
           // Un navigateur le pose tout seul ; un fetch serveur-à-serveur non.
           Referer: `${FORMSUBMIT_ORIGIN}/`,
           Origin: FORMSUBMIT_ORIGIN,
+          // FormSubmit est derrière Cloudflare, qui filtre sur l'empreinte de
+          // l'appelant. Depuis une IP résidentielle la requête passe même sans
+          // ces en-têtes ; depuis une IP de datacenter (Vercel) elle repart en
+          // 403 avec une page HTML de blocage — pas du JSON, d'où un message
+          // d'erreur vide si on la lit sans précaution (voir plus bas).
+          // Un `fetch` Node n'envoie aucun User-Agent par défaut : c'est le
+          // signal le plus voyant pour Cloudflare, on le comble.
+          "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+          "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: JSON.stringify({
           Nom: name,
@@ -129,11 +140,19 @@ export async function POST(request: Request) {
       }
     );
 
+    // On lit d'ABORD en texte. Un refus de Cloudflare est une page HTML :
+    // `upstream.json()` échouait alors silencieusement et le journal
+    // n'affichait qu'un « undefined » indiagnosticable. Le texte brut, lui,
+    // dit toujours quelque chose.
+    const raw = await upstream.text();
+
     // FormSubmit renvoie `success` en CHAÎNE ("true"), pas en booléen.
-    const result = (await upstream.json().catch(() => null)) as {
-      success?: string | boolean;
-      message?: string;
-    } | null;
+    let result: { success?: string | boolean; message?: string } | null = null;
+    try {
+      result = JSON.parse(raw);
+    } catch {
+      // réponse non-JSON : `raw` est journalisé ci-dessous
+    }
 
     const ok =
       upstream.ok &&
@@ -143,7 +162,7 @@ export async function POST(request: Request) {
       console.error(
         "[/api/subscribe] FormSubmit a refusé la soumission",
         upstream.status,
-        result?.message
+        result?.message ?? `réponse non-JSON: ${raw.slice(0, 300)}`
       );
       return NextResponse.json({ error: "upstream_failed" }, { status: 502 });
     }
