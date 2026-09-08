@@ -88,12 +88,21 @@ export default function Section09Circle() {
           </p>
 
           {status === "success" ? (
-            <p
-              role="status"
-              className="mt-10 font-display text-xl text-terracota"
-            >
-              Vous êtes dans le Cercle. La suite vous parviendra en premier.
-            </p>
+            /* Confirmation affichée sur le site. Elle ne promet AUCUN e-mail :
+               tant que l'envoi automatique après soumission n'est pas en
+               place, « la suite vous parviendra » aurait annoncé un message
+               qui n'arrive jamais. Formulation validée par le client — ne pas
+               la paraphraser. `role="status"` porte sur le bloc entier pour
+               que les deux lignes soient annoncées ensemble. */
+            <div role="status" className="mt-10 max-w-md">
+              <p className="font-display text-xl text-terracota">
+                Votre place est réservée.
+              </p>
+              <p className="mt-3 text-sm sm:text-base text-light-grey/70">
+                Vous serez parmi les premiers à voir les certitudes basculer.
+                La suite arrive bientôt.
+              </p>
+            </div>
           ) : (
             <form
               onSubmit={handleSubmit}
