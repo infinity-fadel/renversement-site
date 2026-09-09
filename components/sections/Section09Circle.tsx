@@ -88,17 +88,30 @@ export default function Section09Circle() {
           </p>
 
           {status === "success" ? (
-            /* Confirmation affichée sur le site. Elle ne promet AUCUN e-mail :
-               tant que l'envoi automatique après soumission n'est pas en
-               place, « la suite vous parviendra » aurait annoncé un message
-               qui n'arrive jamais. Formulation validée par le client — ne pas
-               la paraphraser. `role="status"` porte sur le bloc entier pour
-               que les deux lignes soient annoncées ensemble. */
-            <div role="status" className="mt-10 max-w-md">
-              <p className="font-display text-xl text-terracota">
-                Votre place est réservée.
-              </p>
-              <p className="mt-3 text-sm sm:text-base text-light-grey/70">
+            /* Confirmation affichée sur le site : le cadre porte l'accusé de
+               réception, la phrase de suite se lit dessous (4e retour client).
+               Elle ne promet AUCUN e-mail — tant que l'envoi automatique après
+               soumission n'est pas en place, « la suite vous parviendra »
+               aurait annoncé un message qui n'arrive jamais. Formulation
+               validée par le client, ne pas la paraphraser. `role="status"`
+               porte sur le bloc entier pour que le cadre et la phrase soient
+               annoncés ensemble par les lecteurs d'écran. */
+            <div role="status" className="mt-10 w-full max-w-sm">
+              {/* Même largeur que le formulaire qu'il remplace (`max-w-sm`) :
+                  sans cela la colonne changeait de largeur à la soumission et
+                  toute la section se recentrait d'un coup. */}
+              <div className="border border-terracota px-6 py-5 flex items-center gap-3 text-left">
+                <span
+                  aria-hidden="true"
+                  className="shrink-0 w-8 h-8 rounded-full border border-terracota flex items-center justify-center"
+                >
+                  <CheckIcon />
+                </span>
+                <span className="text-xs tracking-widest2 uppercase text-terracota leading-relaxed">
+                  Votre place est réservée.
+                </span>
+              </div>
+              <p className="mt-5 text-sm sm:text-base text-light-grey/70">
                 Vous serez parmi les premiers à voir les certitudes basculer.
                 La suite arrive bientôt.
               </p>
@@ -196,18 +209,9 @@ export default function Section09Circle() {
         */}
         {status === "success" && (
           <div className="hidden lg:flex flex-col gap-6 w-72 shrink-0 pt-16">
-            <div className="border border-terracota px-6 py-5 flex items-start gap-3">
-              <span
-                aria-hidden="true"
-                className="shrink-0 w-8 h-8 rounded-full border border-terracota flex items-center justify-center"
-              >
-                <CheckIcon />
-              </span>
-              <span className="text-xs tracking-widest2 uppercase text-terracota leading-relaxed">
-                Vous êtes dans le Cercle.
-              </span>
-            </div>
-
+            {/* Le cadre de confirmation était ici ; il est passé dans la
+                colonne principale, sous le formulaire (4e retour client). Le
+                dédoubler aurait dit deux fois la même chose à l'écran. */}
             <div className="border border-light-grey/15 px-6 py-6">
               <span className="text-xs tracking-widest2 uppercase text-terracota">
                 Prolongez l&apos;expérience.
