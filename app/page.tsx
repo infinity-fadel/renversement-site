@@ -12,10 +12,11 @@ import IntroVideo from "@/components/ui/IntroVideo";
 import Section03Direction from "@/components/sections/Section03Direction";
 import Section04Observe from "@/components/sections/Section04Observe";
 import Section05Clues from "@/components/sections/Section05Clues";
-import Section06Shift from "@/components/sections/Section06Shift";
-import Section07FlipCard from "@/components/sections/Section07FlipCard";
-import Section08Urgency from "@/components/sections/Section08Urgency";
-import Section09Circle from "@/components/sections/Section09Circle";
+import Section06Circle from "@/components/sections/Section06Circle";
+import Section07Shift from "@/components/sections/Section07Shift";
+import Section08FlipCard from "@/components/sections/Section08FlipCard";
+import Section09Urgency from "@/components/sections/Section09Urgency";
+import RejoinCircle from "@/components/ui/RejoinCircle";
 import Section10Final from "@/components/sections/Section10Final";
 import Section11Footer from "@/components/sections/Section11Footer";
 
@@ -46,10 +47,16 @@ export default function Home() {
         <Section03Direction />
         <Section04Observe />
         <Section05Clues />
-        <Section06Shift />
-        <Section07FlipCard />
-        <Section08Urgency />
-        <Section09Circle />
+        {/* Le formulaire est remonté ici au 5e retour client : juste après la
+            phrase « C'est peut-être un problème de clés. » qui ferme les
+            indices. Il fermait la page auparavant. */}
+        <Section06Circle />
+        <Section07Shift />
+        <Section08FlipCard />
+        <Section09Urgency />
+        {/* Sa place d'avant, occupée par un simple rappel vers #circle pour
+            qui n'a pas rempli le formulaire en chemin. */}
+        <RejoinCircle />
         <Section10Final />
       </main>
 

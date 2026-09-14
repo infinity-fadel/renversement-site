@@ -31,9 +31,11 @@ npm run dev
 - **Accessibilité de base** : focus visible, `aria-live`, `aria-pressed`,
   respect de `prefers-reduced-motion`, interactions clavier sur les
   composants interactifs (bascule, flip card, rotation).
-- **Formulaire section 09** fonctionnel de bout en bout : validation côté
-  champ-piège anti-robot et envoi des inscriptions par e-mail via FormSubmit
-  (`lib/formsubmit.ts`, appelé depuis le navigateur).
+- **Formulaire section 06** fonctionnel de bout en bout : validation, champ-piège
+  anti-robot, puis inscription via **Brevo** (`app/api/subscribe/route.ts` :
+  contact ajouté à la liste, e-mail de bienvenue à l'inscrit·e, notification à
+  `contact@lerenversement.com`). Repli automatique sur FormSubmit
+  (`lib/formsubmit.ts`) si Brevo est indisponible ou pas encore configuré.
 
 ## Ce qu'il reste à faire (prochaines itérations)
 
@@ -45,12 +47,15 @@ npm run dev
    rotation 0→180° pilotée par le scroll en section 03
    (`Section03Direction.tsx`, bouton conservé comme alternative clavier).
    Le setup GSAP/ScrollTrigger partagé est dans `lib/gsap.ts`. Reste
-   ouvert : affiner le flip de la section 07 (déjà fonctionnel en CSS pur)
+   ouvert : affiner le flip de la section 08 (déjà fonctionnel en CSS pur)
    si un rendu plus riche est souhaité.
-3. **Inscriptions** — opérationnelles : envoi direct du navigateur vers
-   FormSubmit (`lib/formsubmit.ts`), destination `contact@lerenversement.com`.
-   Le relais serveur a été retiré, Cloudflare bloquant les IP de Vercel. Le
-   passage à un vrai CRM (Brevo, Mailchimp…) reste ouvert §9.3.
+3. **Inscriptions** — opérationnelles via Brevo (§9.3). **Une seule action
+   reste à faire côté hébergeur** : poser `BREVO_API_KEY` dans Vercel (et
+   `BREVO_LIST_ID`, vivement conseillé), puis redéployer — Vercel n'applique
+   pas une nouvelle variable au déploiement déjà en ligne. Voir `.env.example`
+   pour les six autres variables, toutes facultatives. Tant que la clé n'est
+   pas posée, le formulaire continue de fonctionner en repli sur FormSubmit,
+   mais sans liste de contacts ni e-mail de bienvenue.
 4. **Section 00** : le préchargement est simulé (timer) ; à remplacer par un
    vrai suivi de chargement des ressources critiques si besoin.
 5. **Vidéo** entre « Le Cercle » et « Phrase finale » (debrief V1) — fichier

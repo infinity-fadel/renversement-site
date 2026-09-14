@@ -5,7 +5,7 @@ import Image from "next/image";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 
 /**
- * Section 07 — Retournez la carte (§6.8)
+ * Section 08 — Retournez la carte (§6.8)
  *
  * Deux cartes indépendamment retournables en 3D (§6.8 : « flip 3D à 180°…
  * le contenu masqué ne doit pas rester lisible par le lecteur d'écran »).
@@ -48,7 +48,7 @@ const CARDS: Array<{
   },
 ];
 
-export default function Section07FlipCard() {
+export default function Section08FlipCard() {
   // L'état de retournement est porté ici, une entrée par carte, et non plus
   // dans chaque carte : les trois commandes du bas doivent pouvoir agir sur les
   // deux cartes à la fois. Ça supprime au passage le remontage forcé par `key`
@@ -77,7 +77,7 @@ export default function Section07FlipCard() {
   return (
     <SectionWrapper id="flip" className="text-center relative overflow-hidden">
       <div aria-hidden="true" className="flex flex-col items-center mb-3">
-        <span className="font-display text-sm text-terracota">07</span>
+        <span className="font-display text-sm text-terracota">08</span>
         <span className="w-6 h-px bg-terracota/60 mt-2" />
       </div>
 

@@ -56,7 +56,8 @@ apparaîtra modifié après chaque `build`/`tsc`. Ne pas committer ce bruit
 
 [app/page.tsx](app/page.tsx) rend tout dans un ordre fixe : deux fonds de page
 persistants, le loader en overlay conditionnel, `Nav`, `ProgressIndicator`,
-les sections 02→10 dans `<main>`, puis le footer hors de `<main>`. Pas de
+les sections 02→10 dans `<main>` (plus le rappel `RejoinCircle`, qui n'est
+pas une section du registre), puis le footer hors de `<main>`. Pas de
 routing — site à page unique.
 
 `page.tsx` porte `"use client"`, donc **tout ce qu'il importe finit dans le
@@ -77,16 +78,42 @@ pilote le menu, l'indicateur de progression et les cibles de
 l'IntersectionObserver de `useActiveSection`. Pour ajouter/retirer/réordonner
 une section, modifier ce fichier — ne jamais dupliquer la liste ailleurs.
 
+**Renumérotation du 5e retour client.** Le formulaire est remonté juste après
+« Les indices » ; les numéros affichés ont donc bougé, ainsi que les noms de
+fichiers de `components/sections/` :
+
+| Avant | Après | Section |
+|---|---|---|
+| 09 | **06** | Le Cercle (le formulaire, `Section06Circle.tsx`) |
+| 06 | **07** | La bascule (`Section07Shift.tsx`) |
+| 07 | **08** | La carte (`Section08FlipCard.tsx`) |
+| 08 | **09** | Compte à rebours (`Section09Urgency.tsx`) |
+
+Le nombre d'entrées et la plage 00→11 sont inchangés. L'ancre `circle` a suivi
+le formulaire : `Nav.tsx` et `Section09Urgency.tsx` y renvoient sans avoir été
+touchés.
+
 Deux pièges de numérotation :
 
 - Le tableau `SECTIONS` compte **11 entrées**, pas 12 : la « section 01 »
   est la navigation (`Nav.tsx`), qui n'a pas d'ancre propre et ne figure donc
   pas dans le registre. Les « 12 sections » des docs comptent le nav.
 - `navOrder` pilote l'ordre du menu, distinct par construction de l'ordre du
-  parcours. Depuis le debrief V1 les deux coïncident (« Compte à rebours »
-  est repassé devant « Le Cercle », à rebours du §6.2 du cahier des charges) —
-  le champ est conservé parce qu'il reste le seul point de réglage du menu.
+  parcours. Les deux coïncident, et c'est la règle retenue.
   `Nav.tsx` trie par `navOrder`, `ProgressIndicator` suit l'ordre du tableau.
+
+  **Attention, le sens s'est inversé au 5e retour.** Au debrief V1, le client
+  avait demandé que « Compte à rebours » passe devant « Le Cercle » (à rebours
+  du §6.2) : le formulaire fermait alors la page, suivre le parcours donnait
+  cet ordre. Le formulaire étant remonté en 06, suivre le parcours donne
+  désormais l'ordre contraire. Point à reconfirmer côté client — cf. le
+  commentaire dans `config/sections.config.ts` pour le revenir en une ligne.
+
+- **Le bloc de rappel du bas de page n'est pas dans le registre.**
+  `components/ui/RejoinCircle.tsx` renvoie vers `#circle` ; c'est un rappel,
+  pas un chapitre. Donc pas de numéro, pas d'entrée de menu, pas de pas dans
+  l'indicateur — et surtout pas l'ancre `circle`, qui reste celle du
+  formulaire.
 
 `useActiveSection` est appelé indépendamment par `Nav` et par
 `ProgressIndicator` : deux IntersectionObserver distincts observent les mêmes
@@ -157,7 +184,7 @@ cas explicitement demandés par le cahier des charges — **5 sections** :
 | `Section00Loader` | Apparition progressive du logo puis des lignes, et sortie en ouverture circulaire (`clip-path: circle()`) |
 | `Section02Hero` | Titre révélé mot par mot par masque — déclenché par la prop `start`, pas par un observateur (voir plus bas) |
 | `Section05Clues` | Entrée séquentielle des cartes + tracé progressif des anneaux de pourcentage |
-| `Section06Shift` | Flash d'opacité par ligne à l'activation + révélation de la phrase de conclusion |
+| `Section07Shift` | Flash d'opacité par ligne à l'activation + révélation de la phrase de conclusion |
 | `Section10Final` | Halo de lumière puis apparition lente du texte (timeline > 3 s) |
 
 La section 03 n'anime plus rien : son cadran « 180° » et sa rotation au scroll
@@ -188,7 +215,7 @@ pour éviter tout conflit avec React pendant le scrub. Le bouton reste une
 alternative clavier/tactile pleinement fonctionnelle (§6.4) et pilote la même
 ref.
 
-Section 07 (flip de carte) est en CSS pur (`transformStyle: preserve-3d`),
+Section 08 (flip de carte) est en CSS pur (`transformStyle: preserve-3d`),
 sans GSAP. Le retournement se déclenche au **survol** depuis le 3e debrief
 (« il faut que la carte se retourne au passage de la souris, pas attendre qu'on
 clique »). Le survol est un état séparé de l'état cliqué et la face affichée est
@@ -277,11 +304,12 @@ la rotation plutôt que de supprimer le rendu 3D.
 conteneur sans que `Section04Observe` n'entraîne `three.js` dans le bundle
 principal — ne pas y ajouter d'import lourd.
 
-### Formulaire (section 09)
+### Formulaire (section 06)
 
-`Section09Circle.tsx` appelle `lib/formsubmit.ts`, qui poste directement vers
-FormSubmit depuis le navigateur — voir « Formulaire du Cercle » plus bas pour
-les raisons et les pièges. Aucune route serveur n'est impliquée.
+`Section06Circle.tsx` appelle `lib/subscribe.ts`, seul point d'entrée. Celui-ci
+appelle la route `app/api/subscribe/route.ts` (Brevo) et retombe sur
+`lib/formsubmit.ts` si Brevo est indisponible ou pas encore configuré — voir
+« Formulaire du Cercle » plus bas pour les raisons et les pièges.
 
 ### Polices
 
@@ -343,7 +371,8 @@ très utilisé.
   restent **à câbler** : rien ne pousse encore dans `dataLayer`, et le pixel
   Meta n'envoie que `PageView`.
 - Vidéo d'introduction : fichier non fourni. Le 3e debrief la situe **entre le
-  hero (02) et la section 03** (et non plus entre 09 et 10 comme au debrief V1).
+  hero (02) et la section 03** (et non plus entre le formulaire et la phrase
+finale, comme au debrief V1).
   `components/ui/IntroVideo.tsx` est monté à cet endroit dans `app/page.tsx` et
   ne rend **rien** tant que `SITE_CONFIG.introVideo` vaut `null` — pas de cadre
   vide en production. Déposer le fichier dans `public/video/` et renseigner le
@@ -408,39 +437,105 @@ Démarrage automatique demandé par le client. Ce qui est réellement possible :
 
 ## Formulaire du Cercle
 
-L'envoi part du **navigateur** vers FormSubmit (`lib/formsubmit.ts`), appelé
-par `Section09Circle.tsx`. Il n'y a **plus de route serveur** : `app/api/` a
-été supprimé le 7 septembre 2026.
+Deux chemins, un seul point d'entrée : `Section06Circle.tsx` n'appelle que
+`lib/subscribe.ts` et ignore lequel des deux a répondu.
 
-- **Pourquoi le relais serveur a été abandonné.** FormSubmit est derrière
-  Cloudflare, qui filtre sur l'appelant. Le même appel, en-têtes identiques,
-  passe en 200 depuis une IP résidentielle et repart en **403 depuis Vercel**,
-  avec une page HTML de blocage (donc un message vide si on la lit en JSON).
-  Aucun réglage d'en-tête n'y change rien — la requête doit partir d'une IP de
-  visiteur. Inutile de reproposer un route handler : l'essai a été fait.
-- **Le jeton FormSubmit est dans le bundle client, donc public.** Contrepartie
-  assumée, arbitrage client : c'est le mode d'emploi normal de FormSubmit et
-  le rôle même du jeton — l'ADRESSE (`contact@lerenversement.com`) n'apparaît
-  ni dans le code ni dans l'URL appelée. Le risque réel est qu'un tiers s'en
-  serve pour écrire dans la boîte. L'alternative écartée était un vrai service
-  d'envoi (Resend, Brevo, §9.3), qui imposerait une clé d'API donc une variable
-  chez l'hébergeur — or le déploiement se fait au push, sans configuration.
-- **L'activation est indexée par couple (destinataire, Referer)**, et le
-  `Referer` est maintenant posé par le navigateur : c'est un en-tête interdit
-  en `fetch`, **impossible à surcharger**. Le domaine réellement servi doit
-  donc être activé. Domaines activés : `www.lerenversement.com` (le canonique —
-  l'apex redirige en 308 vers lui), `lerenversement.com`, `renversement.africa`.
-  Tout nouveau domaine exige un clic dans un e-mail reçu sur la boîte du client.
-- **Un refus arrive en HTTP 200.** `response.ok` ne suffit pas : il faut lire
-  le corps, et `success` y est une **chaîne** (`"true"`), pas un booléen. La
-  réponse est lue en texte puis parsée, sans quoi un blocage Cloudflare (du
-  HTML) produit une erreur vide et indiagnosticable.
-- Champ-piège `website` : rempli ⇒ on affiche « succès » sans rien envoyer.
-  Ce contrôle est passé côté client avec l'envoi. Un refus explicite
-  apprendrait au robot à le contourner.
-- **FormSubmit ne déduplique pas**, et il n'y a plus de code 409 nulle part :
-  la branche `duplicate` de `Section09Circle.tsx` est désormais inatteignable
-  par construction. Conservée pour le jour où un vrai CRM prendra le relais.
+1. **Brevo (voie normale)** — `lib/subscribe.ts` → `app/api/subscribe/route.ts`
+   → API Brevo. La route crée le contact, puis envoie **deux e-mails** :
+   bienvenue à l'inscrit·e, notification à `contact@lerenversement.com`.
+2. **FormSubmit (secours)** — `lib/formsubmit.ts`, depuis le navigateur, comme
+   avant. Utilisé uniquement quand la route répond qu'elle n'a rien pu
+   enregistrer.
+
+### La route serveur est de retour, et ce n'est pas une rechute
+
+`app/api/` avait été supprimé le 7 septembre 2026 parce que FormSubmit est
+derrière Cloudflare, qui répond **403 aux IP de Vercel**. Cette leçon porte sur
+FormSubmit, **pas sur le principe d'une route** : l'API Brevo est une API
+serveur-à-serveur, sans filtrage Cloudflare ni activation par `Referer`. Ne pas
+invoquer l'échec de 2026 pour refuser cette route.
+
+Elle est par ailleurs **obligatoire** : la clé Brevo donne accès à tout le
+compte (contacts, campagnes, facturation) et ne peut pas se retrouver dans le
+bundle client. C'est toute la différence avec le jeton FormSubmit, qui ne
+permet que d'écrire dans une boîte. **Jamais de `NEXT_PUBLIC_` sur
+`BREVO_API_KEY`.** En contrepartie, le repli FormSubmit reste **côté
+navigateur** — le relayer depuis la route reproduirait exactement le 403.
+
+### Contrat de la route (à respecter des deux côtés)
+
+| Réponse | Sens | Le client… |
+|---|---|---|
+| `200 {ok:true}` | inscrit | affiche le succès |
+| `409 duplicate` | déjà inscrit | affiche « déjà inscrite » |
+| `400 invalid` | saisie refusée | affiche l'erreur |
+| `503 brevo_not_configured` \| `brevo_unavailable` | rien enregistré | **bascule sur FormSubmit** |
+
+On ne bascule **pas** sur 409 ni sur 400 : Brevo a répondu, sa réponse fait
+autorité, et repartir vers FormSubmit y enverrait un doublon invisible.
+
+Le 503 n'est pas décoratif : le déploiement se fait au push, sans configuration
+chez l'hébergeur. Sans lui, un déploiement précédant la pose de la variable
+casserait le formulaire et perdrait les inscriptions sans laisser de trace.
+
+### Variables (détail complet dans `.env.example`)
+
+**`BREVO_API_KEY` est la seule obligatoire.** `BREVO_LIST_ID`,
+`BREVO_SENDER_EMAIL`/`_NAME`, `BREVO_NOTIFICATION_EMAIL`,
+`BREVO_NAME_ATTRIBUTE` et les deux `BREVO_*_TEMPLATE_ID` ont des défauts
+utilisables. Vercel n'applique pas une nouvelle variable au déploiement déjà en
+ligne : **redéployer après l'avoir posée.**
+
+### Pièges Brevo, chacun déjà traité dans le code
+
+- **L'expéditeur doit être vérifié** dans Brevo (Settings > Senders), sinon
+  l'envoi part en 400 et rien n'arrive. Cause d'échec n°1 au premier
+  déploiement ; le motif exact est journalisé dans les logs de la fonction.
+- **Le nom de l'attribut dépend de la langue du compte** : `NOM` pour un compte
+  créé en français, `LASTNAME` en anglais. Un attribut inconnu fait répondre
+  400 ; la route **retente alors une fois sans attributs** plutôt que de perdre
+  l'inscription, et le signale dans les logs. Ce second essai est réservé au
+  400 — sur 401/403/429/5xx, retirer les attributs ne changerait rien.
+- **`updateEnabled: false`** est volontaire : une resoumission ne doit pas
+  écraser silencieusement un contact existant. C'est ce qui produit le
+  `duplicate_parameter` dont on a besoin.
+- **Les deux e-mails sont « au mieux »** (`Promise.allSettled`). Un échec
+  d'envoi ne remonte pas au visiteur, qui est bel et bien inscrit — lui
+  afficher une erreur l'inviterait à se réinscrire, donc à créer un doublon.
+- **Délai plafonné à 8 s** (`AbortSignal.timeout`). Sans lui, une lenteur de
+  Brevo bloquerait le visiteur jusqu'au délai d'exécution Vercel (10 s), bouton
+  figé sur « Inscription en cours… ».
+- Les valeurs du formulaire sont **échappées** avant d'entrer dans le HTML des
+  e-mails (`escapeHtml`, `lib/brevo-emails.ts`) — la partie texte, elle, reçoit
+  la valeur brute, sinon « O'Brien » s'y lirait « O&#39;Brien ».
+
+### Ce que Brevo change ailleurs dans le code
+
+- **La branche `duplicate` de `Section06Circle.tsx` est redevenue
+  atteignable.** Elle était inatteignable par construction tant que FormSubmit
+  était seul (il ne déduplique pas) ; elle est de nouveau branchée.
+- **Le texte de confirmation peut désormais mentionner un e-mail.** Il avait
+  été écrit pour n'en promettre aucun, faute d'envoi automatique — la
+  contrainte est levée. Mais la formulation est **validée mot à mot par le
+  client** : la changer suppose de la faire revalider, pas de la paraphraser.
+
+### Ce qui reste vrai de FormSubmit (secours)
+
+- Le jeton est **dans le bundle client, donc public** — contrepartie assumée,
+  l'adresse `contact@lerenversement.com` n'apparaît, elle, ni dans le code ni
+  dans l'URL appelée.
+- **L'activation est indexée par couple (destinataire, `Referer`)**, et le
+  `Referer` est posé par le navigateur : en-tête interdit en `fetch`,
+  **impossible à surcharger**. Domaines activés : `www.lerenversement.com` (le
+  canonique — l'apex redirige en 308 vers lui), `lerenversement.com`,
+  `renversement.africa`. Tout nouveau domaine exige un clic dans un e-mail reçu
+  sur la boîte du client.
+- **Un refus arrive en HTTP 200.** `response.ok` ne suffit pas : il faut lire le
+  corps, et `success` y est une **chaîne** (`"true"`), pas un booléen.
+- Champ-piège `website` : rempli ⇒ on affiche « succès » sans rien envoyer. Un
+  refus explicite apprendrait au robot à le contourner. Contrôlé **des deux
+  côtés** — le filtrage client n'existe pas pour un robot qui appelle la route
+  directement.
 
 ## Gouttière latérale et indicateur de progression
 
@@ -451,7 +546,8 @@ des sections (le debrief V1 signale « OBSERVER DEPUIS L'AUTRE CÔTÉ » qui
 chevauche le titre de la section 04). Ne pas en changer un sans l'autre.
 
 La gouttière est symétrique à dessein : le debrief demande par ailleurs de
-recentrer la section 09, donc aucun `pl-` asymétrique ici.
+recentrer la section du formulaire (désormais 06), donc aucun `pl-`
+asymétrique ici.
 
 ## Écrans bas (hauteur de viewport)
 
@@ -480,10 +576,12 @@ largeur — les breakpoints Tailwind habituels ne servent à rien ici :
   à 27 px sur les écrans larges et bas. `scaled(N)` rend `min(N px, N/10 vh)`,
   soit exactement l'échelle du conteneur.
 - `SectionWrapper` réduit son rembourrage vertical via la variante arbitraire
-  `[@media(max-height:820px)]:py-10`, et la section 08 resserre ses `mt-14`.
+  `[@media(max-height:820px)]:py-10`, et la section 09 (compte à rebours)
+  resserre ses `mt-14`.
 
 Vérifié à 1280×680, 1440×760, 1500×959 et 1920×1080 : toutes les sections
-tiennent dans le viewport (sauf 07 et 09, qui dépassent de 27 px et 8 px — sans
+tiennent dans le viewport (sauf la carte et le formulaire, qui dépassent de
+27 px et 8 px — sans
 conséquence, elles défilent).
 
 ## Images

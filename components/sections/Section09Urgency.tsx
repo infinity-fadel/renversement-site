@@ -2,12 +2,12 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
 import Countdown from "@/components/ui/Countdown";
 
 /**
- * Section 08 — Le renversement approche (§6.9)
+ * Section 09 — Le renversement approche (§6.9)
  * Texte principal et secondaire repris littéralement du cahier des charges
  * (à ne pas paraphraser). Intègre le compte à rebours (120h, heure
  * d'Abidjan — voir config/site.config.ts et hooks/useCountdown.ts).
  */
-export default function Section08Urgency() {
+export default function Section09Urgency() {
   return (
     <SectionWrapper id="urgency" className="text-center relative overflow-hidden">
       {/* Arcs concentriques décoratifs derrière le titre (référence maquette) */}
@@ -26,7 +26,7 @@ export default function Section08Urgency() {
       </div>
 
       <div aria-hidden="true" className="flex flex-col items-center mb-3">
-        <span className="font-display text-sm text-terracota">08</span>
+        <span className="font-display text-sm text-terracota">09</span>
         <span className="w-6 h-px bg-terracota/60 mt-2" />
       </div>
 

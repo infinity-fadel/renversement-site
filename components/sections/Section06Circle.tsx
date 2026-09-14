@@ -3,21 +3,33 @@
 import { useState, FormEvent } from "react";
 import SectionWrapper from "@/components/ui/SectionWrapper";
 import { SITE_CONFIG } from "@/config/site.config";
-import { subscribeToCircle } from "@/lib/formsubmit";
+import { subscribeToCircle } from "@/lib/subscribe";
 
 type FormStatus = "idle" | "submitting" | "success" | "error" | "duplicate";
 
 /**
- * Section 09 — Le Cercle (§6.10)
- * L'envoi part du NAVIGATEUR vers FormSubmit (voir lib/formsubmit.ts, qui
- * documente pourquoi le relais serveur a été abandonné : Cloudflare bloque
- * les IP de datacenter). Validation, champ-piège, anti double-soumission et
- * messages d'état sont donc désormais entièrement côté client.
+ * Section 06 — Le Cercle (§6.10)
+ *
+ * DÉPLACÉE AU 5e RETOUR CLIENT : ce formulaire fermait la page (section 09).
+ * Il est désormais juste sous « Les indices », après la phrase « C'est
+ * peut-être un problème de clés. » — on demande l'inscription au moment où la
+ * question vient d'être posée, plus au bout du parcours. Le bas de page garde
+ * un rappel vers ici (components/ui/RejoinCircle.tsx).
+ *
+ * L'ancre reste `circle` : Nav.tsx et Section09Urgency.tsx y renvoient, et
+ * c'est elle que vise le bouton du rappel. Ne pas la donner au bloc du bas.
+ *
+ * L'envoi passe par `lib/subscribe.ts`, qui appelle la route `/api/subscribe`
+ * (Brevo : création du contact, e-mail de bienvenue à l'inscrit·e, notification
+ * à la boîte du client) et retombe sur FormSubmit si Brevo est indisponible ou
+ * pas encore configuré. Ce composant ignore lequel des deux a répondu.
+ * Validation, champ-piège, anti double-soumission et messages d'état restent
+ * côté client — le serveur les recontrôle de son côté.
  * Champs nom+e-mail conservés (conforme au texte du cahier des charges :
  * "Nom et prénom obligatoires") même si la maquette de référence ne montre
  * que l'e-mail — décision confirmée explicitement, pas une divergence.
  */
-export default function Section09Circle() {
+export default function Section06Circle() {
   const [status, setStatus] = useState<FormStatus>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -54,6 +66,13 @@ export default function Section09Circle() {
     const result = await subscribeToCircle({ name, email, source: "site-v1" });
 
     if (!result.ok) {
+      // Brevo déduplique nativement. Cette branche était inatteignable par
+      // construction du temps de FormSubmit seul (qui ne déduplique pas) ;
+      // elle redevient réelle, et l'état "duplicate" plus bas avec elle.
+      if (result.reason === "duplicate") {
+        setStatus("duplicate");
+        return;
+      }
       setStatus("error");
       setErrorMsg("Une erreur technique est survenue. Merci de réessayer.");
       return;
@@ -68,32 +87,37 @@ export default function Section09Circle() {
       <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-start gap-12 lg:gap-16 px-2">
         <div className="relative flex-1 text-center flex flex-col items-center">
           <div aria-hidden="true" className="flex flex-col items-center mb-3">
-            <span className="font-display text-sm text-terracota">09</span>
+            <span className="font-display text-sm text-terracota">06</span>
             <span className="w-6 h-px bg-terracota/60 mt-2" />
           </div>
 
+          {/* Titre et sous-titre dictés mot à mot au 5e retour client. Ils
+              remplacent « Le Cercle des premiers observateurs » et ses deux
+              paragraphes ; la coupure en deux couleurs est conservée, c'est
+              le traitement de titre du reste du site. */}
           <h2 className="font-display text-3xl sm:text-4xl uppercase leading-tight">
-            <span className="text-light-grey">Le Cercle des</span>
+            <span className="text-light-grey">Le Renversement</span>
             <br />
-            <span className="text-terracota">premiers observateurs</span>
+            <span className="text-terracota">ne fait que commencer.</span>
           </h2>
           <span aria-hidden="true" className="w-10 h-px bg-terracota/40 mt-6 mb-6" />
 
           <p className="text-sm sm:text-base text-light-grey/70 max-w-md">
-            Lorsque le moment viendra, vous serez parmi les premiers à
-            découvrir ce qui se cachait derrière cette question.
-          </p>
-          <p className="mt-3 text-sm sm:text-base text-terracota max-w-md">
-            Rejoignez celles et ceux qui souhaitent regarder autrement.
+            Soyez parmi les premiers à découvrir ce qui se cache derrière cette
+            question.
           </p>
 
           {status === "success" ? (
             /* Confirmation affichée sur le site : le cadre porte l'accusé de
                réception, la phrase de suite se lit dessous (4e retour client).
-               Elle ne promet AUCUN e-mail — tant que l'envoi automatique après
-               soumission n'est pas en place, « la suite vous parviendra »
-               aurait annoncé un message qui n'arrive jamais. Formulation
-               validée par le client, ne pas la paraphraser. `role="status"`
+               Elle ne promet AUCUN e-mail : la formulation datait de l'époque
+               où rien n'était envoyé après soumission, et « la suite vous
+               parviendra » aurait annoncé un message qui n'arrive jamais.
+               DEPUIS BREVO, CETTE CONTRAINTE EST LEVÉE — un e-mail de
+               bienvenue part bel et bien. Le texte peut donc mentionner
+               l'e-mail, mais il est validé mot à mot par le client : le
+               changer suppose de le faire revalider, pas de le paraphraser
+               ici. `role="status"`
                porte sur le bloc entier pour que le cadre et la phrase soient
                annoncés ensemble par les lecteurs d'écran. */
             <div role="status" className="mt-10 w-full max-w-sm">
@@ -172,8 +196,8 @@ export default function Section09Circle() {
               <label className="flex items-start gap-2 text-left text-xs text-light-grey/60 mt-2">
                 <input type="checkbox" name="consent" required className="mt-1" />
                 <span>
-                  J&apos;accepte de recevoir des informations de{" "}
-                  {SITE_CONFIG.name} concernant le lancement.
+                  J&apos;accepte de recevoir les informations de{" "}
+                  {SITE_CONFIG.name}.
                 </span>
               </label>
 

@@ -6,7 +6,7 @@ import SectionWrapper from "@/components/ui/SectionWrapper";
 import { gsap } from "@/lib/gsap";
 
 /**
- * Section 06 — Le basculement (§6.7)
+ * Section 07 — Le basculement (§6.7)
  * Les deux colonnes (avant/après) restent toujours visibles et lisibles
  * (référence maquette) ; seul le mot-clé mis en avant passe en or à
  * l'activation. Chaque flèche double au centre d'une ligne est cliquable et
@@ -25,7 +25,7 @@ const DOT_PATTERN = {
   backgroundSize: "10px 10px",
 };
 
-export default function Section06Shift() {
+export default function Section07Shift() {
   const [activated, setActivated] = useState<boolean[]>(
     SHIFTS.map(() => false)
   );
