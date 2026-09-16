@@ -50,6 +50,64 @@ Aucune suite de tests n'est configurée.
 apparaîtra modifié après chaque `build`/`tsc`. Ne pas committer ce bruit
 (idéalement, l'ajouter à `.gitignore` et le déversionner).
 
+## Déploiement (Vercel)
+
+Le déploiement part au push sur `main`. Deux choses non évidentes, toutes deux
+vérifiées le 16 septembre 2026.
+
+### Les commits de `3lkfadel` sont refusés par Vercel
+
+Vercel ne déploie que les commits dont l'**auteur git** a accès au projet.
+Sinon le statut GitHub du commit porte « Deployment was blocked », et sur les
+commits anciens le motif complet :
+
+> Git author 3lkfadel must have access to the project on Vercel to create
+> deployments.
+
+Relevé sur tout l'historique, sans une exception :
+
+| Auteur git | Vercel |
+|---|---|
+| `3lkfadel` | bloqué |
+| `infinity-fadel` | bloqué |
+| `infinityafricatechnology` | déployé |
+
+À en retenir :
+
+- **Les « Update gsap.ts » de l'historique sont des contournements**, pas des
+  correctifs. Un commit fait depuis l'interface web de GitHub sous le compte
+  `infinityafricatechnology` est autorisé, se déploie, et **emporte tout ce qui
+  se trouve dessous**. C'est ainsi que la V7 est arrivée en production alors
+  que son propre commit était bloqué.
+- **Réécrire l'auteur ne suffit pas** : essayé avec
+  `infinity-fadel <fadel.koloma@infinity-africa.com>`, bloqué de la même façon.
+  Inutile de refaire l'essai.
+- Le correctif durable est côté Vercel (équipe `infinity-africa-technology`,
+  projet `renversement`) : donner accès au compte, ou désactiver le contrôle
+  d'auteur. Sans ça, chaque livraison exige un commit de contournement.
+
+Le blocage intervient **avant la compilation**. Un `npm run build` qui passe en
+local — même depuis un clone propre — ne dit donc rien de l'état du
+déploiement. Pour diagnostiquer sans accès au tableau de bord Vercel, l'API
+GitHub donne le motif exact :
+
+```bash
+TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill | sed -n 's/^password=//p')
+curl -s -H "Authorization: Bearer $TOKEN" \
+  https://api.github.com/repos/infinityafricatechnology/renversement/commits/<sha>/status
+```
+
+### Deux dépôts distants, à ne pas confondre
+
+- `origin` → `infinityafricatechnology/renversement` — **c'est celui que Vercel
+  déploie.**
+- `perso` → `infinity-fadel/renversement-site` — longtemps resté sur la V3 du
+  20 août.
+
+Pousser sur l'un ne pousse pas sur l'autre. Avant de conclure qu'un commit
+« n'est pas parti », vérifier lequel des deux on regarde — `git ls-remote`
+interroge le serveur et tranche sans ambiguïté.
+
 ## Architecture
 
 ### Composition
@@ -485,6 +543,47 @@ casserait le formulaire et perdrait les inscriptions sans laisser de trace.
 `BREVO_NAME_ATTRIBUTE` et les deux `BREVO_*_TEMPLATE_ID` ont des défauts
 utilisables. Vercel n'applique pas une nouvelle variable au déploiement déjà en
 ligne : **redéployer après l'avoir posée.**
+
+### État du compte Brevo (relevé le 16 septembre 2026)
+
+Constaté par l'API, pas d'après la documentation.
+
+- **Compte** « Le Renversement », enregistré sous `lerenversement.info@gmail.com`.
+- **Liste `2`** (« Votre première liste ») — c'est la valeur de `BREVO_LIST_ID`.
+- **Expéditeurs vérifiés** : `lerenversement.info@gmail.com` (id 1) et
+  `contact@lerenversement.com` (id 2, validé le 16 septembre par code à
+  6 chiffres).
+- **Chez Vercel, deux variables suffisent** : `BREVO_API_KEY` et
+  `BREVO_LIST_ID`. `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` et
+  `BREVO_NOTIFICATION_EMAIL` tombent exactement sur les défauts du code, les
+  saisir ne ferait que dupliquer.
+
+**Brevo réécrit l'expéditeur si son domaine ne l'autorise pas.** Avec
+`lerenversement.info@gmail.com` en expéditeur, les messages partaient de
+`lerenversement.info@12110518.brevosend.com` : la politique DMARC de Gmail
+interdit d'envoyer en son nom depuis un tiers. Ce n'est pas un réglage manqué,
+c'est un garde-fou. D'où le passage à `contact@lerenversement.com`.
+
+**Le domaine `lerenversement.com` n'est pas encore authentifié**, et la cause
+est identifiée : `_dmarc` porte **deux** enregistrements TXT (le défaut GoDaddy
+en `p=quarantine` vers `onsecureserver.net`, et celui de Brevo en `p=none`).
+La norme impose d'ignorer les deux quand il y en a plusieurs, donc Brevo refuse
+en 400. Les trois autres enregistrements sont **déjà en place et corrects** :
+`brevo-code` en TXT sur la racine, et deux **CNAME** `brevo1._domainkey` /
+`brevo2._domainkey` (ce compte utilise le DKIM par CNAME, pas l'ancien TXT
+`mail._domainkey`).
+
+Une fois la ligne en trop supprimée, relancer la validation :
+
+```bash
+curl -X PUT -H "api-key: $BREVO_API_KEY" \
+  https://api.brevo.com/v3/senders/domains/lerenversement.com/authenticate
+```
+
+**Ne pas toucher au SPF.** Le domaine porte
+`v=spf1 include:spf.protection.outlook.com -all`, qui fait vivre la messagerie
+professionnelle. Brevo n'en a pas besoin — il s'appuie sur le DKIM — et un
+second enregistrement SPF couperait les deux.
 
 ### Pièges Brevo, chacun déjà traité dans le code
 
