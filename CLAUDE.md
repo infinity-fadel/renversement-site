@@ -553,10 +553,17 @@ Constaté par l'API, pas d'après la documentation.
 - **Expéditeurs vérifiés** : `lerenversement.info@gmail.com` (id 1) et
   `contact@lerenversement.com` (id 2, validé le 16 septembre par code à
   6 chiffres).
-- **Chez Vercel, deux variables suffisent** : `BREVO_API_KEY` et
-  `BREVO_LIST_ID`. `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` et
-  `BREVO_NOTIFICATION_EMAIL` tombent exactement sur les défauts du code, les
-  saisir ne ferait que dupliquer.
+- **Chez Vercel, une seule variable est nécessaire** : `BREVO_API_KEY`.
+  Toutes les autres ont un défaut correct dans le code — `BREVO_LIST_ID` vaut
+  `2` depuis le 17 septembre, pour la raison ci-dessous.
+
+**Le défaut de `BREVO_LIST_ID` n'est pas cosmétique.** Une inscription réelle
+en production le 17 septembre a créé le contact mais **sans liste**
+(`listIds: []`) : la variable n'était pas appliquée chez l'hébergeur. Le
+contact existe dans « tous les contacts », mais il serait passé à côté de
+l'envoi du 2 octobre. Le déploiement se faisant au push sans configuration,
+un identifiant de liste — qui n'est pas un secret — doit avoir un défaut, au
+même titre que `SITE_DOMAIN` ou `LAUNCH_DATE`.
 
 **Brevo réécrit l'expéditeur si son domaine ne l'autorise pas.** Avec
 `lerenversement.info@gmail.com` en expéditeur, les messages partaient de

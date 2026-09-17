@@ -75,7 +75,17 @@ function readConfig(): Config | null {
   // `undefined` (même piège que dans config/site.config.ts).
   if (!apiKey) return null;
 
-  const listId = Number.parseInt(process.env.BREVO_LIST_ID?.trim() || "", 10);
+  // Défaut à 2 : c'est la liste du compte (« Votre première liste »), et ce
+  // n'est pas un secret. Même logique que SITE_DOMAIN, LAUNCH_DATE ou les
+  // identifiants de mesure d'audience — le déploiement se faisant au push
+  // sans configuration chez l'hébergeur, une valeur par défaut correcte évite
+  // que le site fonctionne « à moitié ». Vérifié le 17 septembre 2026 : sans
+  // ce défaut, une inscription en production créait bien le contact mais
+  // SANS liste, donc invisible pour l'envoi du 2 octobre.
+  const listId = Number.parseInt(
+    process.env.BREVO_LIST_ID?.trim() || "2",
+    10
+  );
   const welcome = Number.parseInt(
     process.env.BREVO_WELCOME_TEMPLATE_ID?.trim() || "",
     10
