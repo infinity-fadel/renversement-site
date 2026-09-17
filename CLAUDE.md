@@ -564,21 +564,41 @@ Constaté par l'API, pas d'après la documentation.
 interdit d'envoyer en son nom depuis un tiers. Ce n'est pas un réglage manqué,
 c'est un garde-fou. D'où le passage à `contact@lerenversement.com`.
 
-**Le domaine `lerenversement.com` n'est pas encore authentifié**, et la cause
-est identifiée : `_dmarc` porte **deux** enregistrements TXT (le défaut GoDaddy
-en `p=quarantine` vers `onsecureserver.net`, et celui de Brevo en `p=none`).
-La norme impose d'ignorer les deux quand il y en a plusieurs, donc Brevo refuse
-en 400. Les trois autres enregistrements sont **déjà en place et corrects** :
-`brevo-code` en TXT sur la racine, et deux **CNAME** `brevo1._domainkey` /
-`brevo2._domainkey` (ce compte utilise le DKIM par CNAME, pas l'ancien TXT
-`mail._domainkey`).
+**Le domaine `lerenversement.com` est authentifié depuis le 17 septembre 2026**
+(`verified: true`, `authenticated: true`, les quatre enregistrements en
+`status: true`). Les e-mails sont donc signés `d=lerenversement.com` et la
+mention « via …brevosend.com » a disparu.
 
-Une fois la ligne en trop supprimée, relancer la validation :
+Ce qui bloquait, et qui peut se reproduire : `_dmarc` portait **deux**
+enregistrements TXT — le défaut GoDaddy en `p=quarantine` vers
+`onsecureserver.net`, et celui de Brevo en `p=none`. La norme impose d'ignorer
+les deux quand il y en a plusieurs ; Brevo refusait donc en 400 avec un message
+générique (« ensure Brevo code, DKIM record and DMARC record are added
+correctly ») qui ne désigne pas le coupable. Supprimer le doublon a suffi.
+
+Les enregistrements en place, à ne pas « corriger » :
+
+| Type | Nom | Valeur |
+|---|---|---|
+| TXT | `@` | `brevo-code:ef49e2fc3e900b595243969800f96e19` |
+| CNAME | `brevo1._domainkey` | `b1.lerenversement-com.dkim.brevo.com` |
+| CNAME | `brevo2._domainkey` | `b2.lerenversement-com.dkim.brevo.com` |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` |
+
+Ce compte utilise le **DKIM par CNAME**, pas l'ancien TXT `mail._domainkey` que
+décrivent la plupart des tutoriels en ligne — ne pas se fier à ceux-là.
+
+Pour revalider après toute modification DNS :
 
 ```bash
 curl -X PUT -H "api-key: $BREVO_API_KEY" \
   https://api.brevo.com/v3/senders/domains/lerenversement.com/authenticate
 ```
+
+Le DMARC est en `p=none` (observation seule). Le durcir en `quarantine` puis
+`reject` est souhaitable, mais **après** le 2 octobre : resserrer la politique
+la veille d'un envoi de masse, c'est se priver de tout filet si un alignement
+se révèle imparfait.
 
 **Ne pas toucher au SPF.** Le domaine porte
 `v=spf1 include:spf.protection.outlook.com -all`, qui fait vivre la messagerie
