@@ -84,6 +84,12 @@ export async function subscribeToCircle(fields: {
   }
 
   if (response.status === 400) {
+    // Journalisé comme tout le reste : sans cette ligne, un refus de saisie
+    // produisait un message d'erreur à l'écran et RIEN dans la console —
+    // impossible à diagnostiquer à distance. Constaté le 17 septembre 2026.
+    console.warn(
+      `[Cercle] Saisie refusée par la route (${payload?.reason ?? "invalid"})`
+    );
     return { ok: false, reason: payload?.reason ?? "invalid" };
   }
 

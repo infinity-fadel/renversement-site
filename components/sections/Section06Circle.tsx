@@ -73,8 +73,16 @@ export default function Section06Circle() {
         setStatus("duplicate");
         return;
       }
+      // Un `invalid` vient du contrôle de format de la route, pas d'une panne.
+      // Le présenter comme une erreur technique envoyait le visiteur réessayer
+      // à l'identique, donc échouer à l'identique, sans jamais comprendre que
+      // c'est son adresse qui est refusée.
       setStatus("error");
-      setErrorMsg("Une erreur technique est survenue. Merci de réessayer.");
+      setErrorMsg(
+        result.reason === "invalid"
+          ? "Cette adresse e-mail ne semble pas valide. Merci de la vérifier."
+          : "Une erreur technique est survenue. Merci de réessayer."
+      );
       return;
     }
 
