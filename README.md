@@ -19,7 +19,7 @@ npm run dev
   composant (`components/sections/`).
 - **Domaine configurable** sans toucher au code — `config/site.config.ts` lit
   `NEXT_PUBLIC_SITE_DOMAIN`.
-- **Compte à rebours jusqu'au 2 octobre 2026**, calculé en heure d'Abidjan
+- **Compte à rebours jusqu'au 6 novembre 2026**, calculé en heure d'Abidjan
   (UTC+0, sans DST) — `hooks/useCountdown.ts` +
   `components/ui/Countdown.tsx`.
 - **Globe Three.js** texturé "Terre de nuit" (NASA Black Marble, domaine

@@ -45,7 +45,7 @@ export default function RejoinCircle() {
         href="#circle"
         className="mt-8 inline-block text-xs tracking-widest2 uppercase bg-terracota text-black px-10 py-4 hover:bg-light-grey transition-colors"
       >
-        Rejoindre le Cercle
+        Rejoignez le Cercle
       </a>
     </SectionWrapper>
   );

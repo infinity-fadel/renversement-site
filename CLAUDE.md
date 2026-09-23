@@ -190,7 +190,8 @@ jamais de valeurs en dur.
   Le déploiement se fait au push sans variable posée chez l'hébergeur : cette
   valeur par défaut est donc bien le domaine servi en production, pas une
   attente. `renversement.africa` était le repli §22 précédent.
-- `LAUNCH_DATE` — **2 octobre 2026** (date validée au debrief V1), codée en
+- `LAUNCH_DATE` — **6 novembre 2026** (communiquée au 6e retour client, le
+  23 septembre ; elle remplace le 2 octobre du debrief V1), codée en
   dur comme valeur par défaut et surchargeable par
   `NEXT_PUBLIC_LAUNCH_DATE_ISO`. Elle est volontairement dans le code et non
   dans la seule variable d'environnement : la date est publique et figée, et le
@@ -561,7 +562,7 @@ Constaté par l'API, pas d'après la documentation.
 en production le 17 septembre a créé le contact mais **sans liste**
 (`listIds: []`) : la variable n'était pas appliquée chez l'hébergeur. Le
 contact existe dans « tous les contacts », mais il serait passé à côté de
-l'envoi du 2 octobre. Le déploiement se faisant au push sans configuration,
+l'envoi du Jour J. Le déploiement se faisant au push sans configuration,
 un identifiant de liste — qui n'est pas un secret — doit avoir un défaut, au
 même titre que `SITE_DOMAIN` ou `LAUNCH_DATE`.
 
@@ -603,7 +604,7 @@ curl -X PUT -H "api-key: $BREVO_API_KEY" \
 ```
 
 Le DMARC est en `p=none` (observation seule). Le durcir en `quarantine` puis
-`reject` est souhaitable, mais **après** le 2 octobre : resserrer la politique
+`reject` est souhaitable, mais **après** le Jour J : resserrer la politique
 la veille d'un envoi de masse, c'est se priver de tout filet si un alignement
 se révèle imparfait.
 

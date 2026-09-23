@@ -224,7 +224,7 @@ export default function Section06Circle() {
               >
                 {status === "submitting"
                   ? "Inscription en cours…"
-                  : "Rejoindre le Cercle"}
+                  : "Rejoignez le Cercle"}
               </button>
 
             </form>

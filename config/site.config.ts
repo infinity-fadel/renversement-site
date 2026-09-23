@@ -56,7 +56,8 @@ export const SITE_TIMEZONE = "Africa/Abidjan";
 // 3. COMPTE À REBOURS — jusqu'au Jour J, en heure d'Abidjan
 // ---------------------------------------------------------------------------
 //
-// Date de révélation validée (debrief client V1) : 2 octobre 2026.
+// Date de révélation : 6 NOVEMBRE 2026, communiquée au 6e retour client
+// (23 septembre 2026). Elle remplace le 2 octobre validé au debrief V1.
 // Abidjan étant UTC+0 toute l'année, l'heure ISO en "Z" EST l'heure locale
 // d'Abidjan — aucune conversion à faire.
 //
@@ -78,7 +79,7 @@ function parseDateEnv(value: string | undefined, fallbackISO: string): Date {
   return Number.isNaN(parsed.getTime()) ? new Date(fallbackISO) : parsed;
 }
 
-const DEFAULT_LAUNCH_ISO = "2026-10-02T00:00:00Z";
+const DEFAULT_LAUNCH_ISO = "2026-11-06T00:00:00Z";
 
 export const LAUNCH_DATE: Date = parseDateEnv(
   process.env.NEXT_PUBLIC_LAUNCH_DATE_ISO,
@@ -100,6 +101,11 @@ export const LAUNCH_DATE: Date = parseDateEnv(
 //
 // À rerégler si le partage est repoussé, sans quoi le même décalage
 // réapparaîtra.
+//
+// NB : cette date ne bouge PAS avec le report du Jour J. Le public a vu le
+// site le 7 septembre, c'est un fait acquis. Le report au 6 novembre étire
+// simplement la fenêtre de l'anneau (60 jours au lieu de 25), donc il se vide
+// plus lentement — c'est le comportement juste.
 const DEFAULT_CAMPAIGN_START_ISO = "2026-09-07T00:00:00Z";
 
 export const CAMPAIGN_START_DATE: Date = parseDateEnv(

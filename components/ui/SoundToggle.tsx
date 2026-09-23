@@ -105,6 +105,24 @@ export default function SoundToggle() {
   const detachRef = useRef<(() => void) | undefined>(undefined);
 
   /**
+   * Relit l'état réel de l'élément audio et aligne le bouton dessus.
+   *
+   * Branchée sur `playing` / `pause` / `ended`, mais aussi appelée à la main
+   * après un démarrage réussi — voir `start()` : ces événements sont émis sur
+   * TRANSITION, et il existe un cas où la transition n'a pas lieu alors que
+   * l'état du bouton doit changer.
+   */
+  const syncFromElement = useCallback(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    // Les pauses volontaires — vidéo en cours, onglet en arrière-plan — ne
+    // sont pas un arrêt du fond sonore. Le choix du visiteur tient, et c'est
+    // `isDucked` qui décrit ce que l'on entend.
+    if (duckedRef.current || hiddenRef.current) return;
+    setIsOn(!el.paused);
+  }, []);
+
+  /**
    * Lance la lecture. Renvoie `false` si le navigateur la refuse.
    *
    * Le contrôle après coup n'est pas superflu : Chrome peut résoudre le
@@ -124,6 +142,25 @@ export default function SoundToggle() {
       startingRef.current = true;
 
       try {
+        // DÉJÀ EN LECTURE. Cas courant et non évident : sur un clic du bouton,
+        // l'écouteur de geste global (en phase de capture, donc antérieur)
+        // a déjà lancé la piste. Deux raisons de ne pas recommencer ici :
+        //
+        //  - `el.volume = 0` creuserait un trou audible au milieu du fondu ;
+        //  - surtout, `play()` sur un élément qui joue déjà N'ÉMET PAS de
+        //    nouvel événement `playing`. Sans le rattrapage ci-dessous, rien
+        //    ne rafraîchissait le bouton : le son sortait, l'icône restait sur
+        //    « muet », et la suspension pendant la vidéo — conditionnée à cet
+        //    état — ne se déclenchait jamais non plus. Les deux défauts
+        //    signalés au 6e retour client n'en faisaient qu'un.
+        if (!el.paused) {
+          unlockedRef.current = true;
+          detachRef.current?.();
+          localStorage.setItem(STORAGE_KEY, "on");
+          syncFromElement();
+          return true;
+        }
+
         el.muted = false;
         el.volume = 0;
         try {
@@ -140,12 +177,15 @@ export default function SoundToggle() {
         fadeTo(TARGET_VOLUME, FADE_IN_MS);
         localStorage.setItem(STORAGE_KEY, "on");
         detachRef.current?.();
+        // Filet : si `playing` a déjà été émis avant que l'écouteur ne soit
+        // en place, ou s'il ne l'est pas du tout, le bouton reste juste.
+        syncFromElement();
         return true;
       } finally {
         startingRef.current = false;
       }
     },
-    [fadeTo]
+    [fadeTo, syncFromElement]
   );
 
   // Démarrage automatique.
@@ -197,24 +237,15 @@ export default function SoundToggle() {
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
-
-    const sync = () => {
-      // Les pauses volontaires — vidéo en cours, onglet en arrière-plan — ne
-      // sont pas un arrêt du fond sonore. Le choix du visiteur tient, et c'est
-      // `isDucked` qui décrit ce que l'on entend.
-      if (duckedRef.current || hiddenRef.current) return;
-      setIsOn(!el.paused);
-    };
-
-    el.addEventListener("playing", sync);
-    el.addEventListener("pause", sync);
-    el.addEventListener("ended", sync);
+    el.addEventListener("playing", syncFromElement);
+    el.addEventListener("pause", syncFromElement);
+    el.addEventListener("ended", syncFromElement);
     return () => {
-      el.removeEventListener("playing", sync);
-      el.removeEventListener("pause", sync);
-      el.removeEventListener("ended", sync);
+      el.removeEventListener("playing", syncFromElement);
+      el.removeEventListener("pause", syncFromElement);
+      el.removeEventListener("ended", syncFromElement);
     };
-  }, []);
+  }, [syncFromElement]);
 
   /**
    * Vidéos de la page : le fond sonore s'efface pendant la lecture et revient
@@ -234,10 +265,20 @@ export default function SoundToggle() {
     const onVideoPlay = (e: Event) => {
       if (!(e.target instanceof HTMLVideoElement)) return;
       const el = audioRef.current;
-      // Rien à faire si la musique ne jouait pas : le choix du visiteur prime.
-      if (!el || !isOn || el.paused) return;
+      // On interroge l'ÉLÉMENT (`el.paused`) et non l'état React `isOn`.
+      // `el.paused` dit ce qui sort réellement des haut-parleurs, et couvre
+      // exactement l'intention d'origine : rien à faire si la musique ne
+      // jouait pas, le choix du visiteur prime.
+      //
+      // La version précédente testait `isOn`, qui pouvait valoir `false` alors
+      // que la piste jouait (voir `start()`) : la vidéo démarrait alors
+      // par-dessus la musique. C'est le second défaut du 6e retour client.
+      if (!el || el.paused) return;
       duckedRef.current = true;
       setIsDucked(true);
+      // La piste joue : le bouton doit l'annoncer, même suspendu. `sync` ne
+      // peut plus le faire — `duckedRef` la court-circuite désormais.
+      setIsOn(true);
       fadeTo(0, FADE_OUT_MS, () => el.pause());
     };
 
@@ -268,7 +309,10 @@ export default function SoundToggle() {
       document.removeEventListener("pause", onVideoStop, true);
       document.removeEventListener("ended", onVideoStop, true);
     };
-  }, [isOn, fadeTo]);
+    // `isOn` a disparu des dépendances : les écouteurs ne se rebranchent plus
+    // à chaque bascule du bouton, et ne peuvent plus capturer une valeur
+    // périmée.
+  }, [fadeTo]);
 
   // Onglet en arrière-plan : on suspend, sans changer le choix de
   // l'utilisateur — la musique reprend au retour.
