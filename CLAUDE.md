@@ -97,26 +97,86 @@ curl -s -H "Authorization: Bearer $TOKEN" \
   https://api.github.com/repos/infinityafricatechnology/renversement/commits/<sha>/status
 ```
 
-### Deux dépôts distants, à ne pas confondre
+### Deux dépôts GitHub, et `origin` n'est pas celui qui déploie
 
-- `origin` → `infinityafricatechnology/renversement` — **c'est celui que Vercel
-  déploie.**
-- `perso` → `infinity-fadel/renversement-site` — longtemps resté sur la V3 du
-  20 août.
+- `infinityafricatechnology/renversement` — **c'est celui que Vercel
+  déploie.** Il n'est **pas** configuré comme distant dans ce clone.
+- `infinity-fadel/renversement-site` — c'est l'`origin` de ce clone (seul
+  distant configuré, relevé le 15 octobre 2026).
 
-Pousser sur l'un ne pousse pas sur l'autre. Avant de conclure qu'un commit
-« n'est pas parti », vérifier lequel des deux on regarde — `git ls-remote`
-interroge le serveur et tranche sans ambiguïté.
+Un `git push` nu ne livre donc **rien** en production. Pour livrer, pousser
+explicitement vers le dépôt déployé (par son URL, ou après l'avoir ajouté comme
+second distant). Avant de conclure qu'un commit « n'est pas parti », vérifier
+lequel des deux on regarde — `git ls-remote <url> main` interroge le serveur et
+tranche sans ambiguïté.
+
+Les commits de contournement « Update gsap.ts » n'existent que sur le dépôt
+déployé : celui-ci a donc normalement un ou deux commits d'avance sur le clone
+local. Ils ne modifient aucun fichier (`git diff HEAD FETCH_HEAD` vide après un
+`git fetch <url> main`) — ce n'est pas une divergence de contenu.
+
+## V2 — site du livre (branche `v2`)
+
+Sur la branche `v2`, `app/page.tsx` rend la **V2** : le site officiel du livre
+qui remplace le teaser au Jour J, à la même URL (§2.3, §17). Les composants V1
+(`components/sections/`, globe, son…) restent dans le dépôt mais ne sont plus
+montés ; tout ce qui suit sous « Architecture » décrit la V1, toujours en ligne
+sur `main`. Bascule prévue : fusion de `v2` dans `main`.
+
+- **Maquette** : Figma « Renversement V2 », fichier
+  `OcdzObPYBHWQQuwpAR4kGC`, page complète `1:2` (1512 px, desktop seulement —
+  le mobile est une adaptation maison). Le compte Figma relié au serveur MCP
+  est une place « View » en offre gratuite : **environ 6 appels par mois**. Les
+  visuels sont déjà rapatriés dans `public/v2/` (WebP) ; ne pas les
+  re-télécharger sans raison.
+- **Textes** : tous dans `config/v2.content.ts`, repris mot pour mot de la
+  maquette. Chaque retouche y est commentée. Les contenus marqués
+  **PROVISOIRE** sont des remplissages de la maquette (extraits, revendeurs,
+  actualités, liens des réseaux, écran d'ouverture) : ils se remplacent là,
+  sans toucher aux composants. Un lien `null` rend un bouton inactif, jamais un
+  `href="#"`.
+- **Composants** : `components/v2/`, briques communes dans `ui.tsx`.
+  Avenir Next (police de la maquette, commerciale) est remplacée par Montserrat,
+  police de contenu de la charte ; les tailles ont été ajustées là où
+  Montserrat, plus large, faisait passer un texte à la ligne (titre du livre,
+  menu).
+- **Animations** : `hooks/useArmedReveal.ts`. Même règle que la V1 — le HTML
+  servi est l'état final ; l'état de départ n'est posé qu'au montage, et
+  seulement pour un élément encore sous la ligne de flottaison.
+- **Formulaires**, tous sur le contrat de « Formulaire du Cercle » (200 / 400 /
+  503 → repli FormSubmit côté navigateur) :
+  - « Rejoindre le mouvement » (`MovementModal`) → `/api/subscribe`, **même
+    liste Brevo que le Cercle** (les inscrits V1 sont reconnus comme déjà
+    inscrits), plus un téléphone facultatif (`BREVO_PHONE_ATTRIBUTE`, sans
+    défaut — voir `.env.example`).
+  - Commande → `/api/order` ; contact → `/api/contact`. Socle commun
+    `lib/form-route.ts`, accès Brevo partagé `lib/brevo-server.ts`, e-mails
+    `lib/v2-emails.ts`, côté client `lib/submit-form.ts`.
+  - **Différence avec l'inscription** : pour une commande ou un message,
+    l'e-mail à l'équipe EST l'enregistrement. S'il échoue, la route répond 503
+    pour que le navigateur bascule sur FormSubmit — il n'est pas « au mieux ».
+- **Paiement** : à la livraison uniquement, conformément à la maquette — pas de
+  Mobile Money ni de carte, contrairement au §17. Écart à faire confirmer.
+- **Piège déjà rencontré** : le carrousel des témoignages divise par la
+  largeur visible de sa piste ; à 0, le nombre de pages devenait infini et
+  `Array.from` faisait planter toute la page. Garder la garde dans `measure()`.
 
 ## Architecture
 
 ### Composition
 
-[app/page.tsx](app/page.tsx) rend tout dans un ordre fixe : deux fonds de page
-persistants, le loader en overlay conditionnel, `Nav`, `ProgressIndicator`,
+[app/page.tsx](app/page.tsx) rend tout dans un ordre fixe : trois fonds de page
+persistants (étoiles, globe, `ReadingLight`), le loader en overlay conditionnel, `Nav`, `ProgressIndicator`,
 les sections 02→10 dans `<main>` (plus le rappel `RejoinCircle`, qui n'est
 pas une section du registre), puis le footer hors de `<main>`. Pas de
 routing — site à page unique.
+
+`ReadingLight` (§7.1) est un radial or sourd, derrière le contenu, dont
+l'opacité et le rayon suivent le chapitre en cours (table `FRAMES`, indexée
+par les `id` du registre). Il survit au fil d'horizon doré retiré au 4e
+debrief : il ne dessine rien, donc ne peut ni couper un texte ni concurrencer
+une image de fond. Une section ajoutée au registre sans entrée dans `FRAMES`
+est simplement ignorée par l'effet.
 
 `page.tsx` porte `"use client"`, donc **tout ce qu'il importe finit dans le
 bundle client**, y compris les sections sans directive `"use client"` en tête
@@ -269,11 +329,6 @@ défaut** (GSAP ne joue que l'entrée, jamais le contenu lisible), et chaque
 composant teste `prefers-reduced-motion` **en JS** et sort avant d'animer —
 pas seulement via le CSS de `globals.css`.
 
-Section 03 : GSAP possède seul la transformation CSS via une ref DOM directe,
-pour éviter tout conflit avec React pendant le scrub. Le bouton reste une
-alternative clavier/tactile pleinement fonctionnelle (§6.4) et pilote la même
-ref.
-
 Section 08 (flip de carte) est en CSS pur (`transformStyle: preserve-3d`),
 sans GSAP. Le retournement se déclenche au **survol** depuis le 3e debrief
 (« il faut que la carte se retourne au passage de la souris, pas attendre qu'on
@@ -411,7 +466,12 @@ très utilisé.
 - `.claude/settings.local.json` est versionné et contient des permissions
   pointant vers un chemin de machine obsolète.
 
-## Manques connus (liste complète dans README.md)
+## Manques connus
+
+Le README a sa propre liste « Ce qu'il reste à faire », mais elle est **en
+retard sur le code** (rotation GSAP de la section 03, vidéo « non fournie »,
+analytics « à brancher », `BREVO_LIST_ID` à poser) : c'est la liste ci-dessous
+qui fait foi.
 
 - Fichiers de la police Apollo absents.
 - La progression du loader est un timer simulé (1400 ms), pas un vrai suivi de
@@ -429,14 +489,22 @@ très utilisé.
   §12.1 (soumission du formulaire, lecture de la vidéo, activation du son…)
   restent **à câbler** : rien ne pousse encore dans `dataLayer`, et le pixel
   Meta n'envoie que `PageView`.
-- Vidéo d'introduction : fichier non fourni. Le 3e debrief la situe **entre le
-  hero (02) et la section 03** (et non plus entre le formulaire et la phrase
-finale, comme au debrief V1).
-  `components/ui/IntroVideo.tsx` est monté à cet endroit dans `app/page.tsx` et
-  ne rend **rien** tant que `SITE_CONFIG.introVideo` vaut `null` — pas de cadre
-  vide en production. Déposer le fichier dans `public/video/` et renseigner le
-  chemin suffit à l'activer. Pas de lecture automatique, volontairement : le
-  fond sonore tournerait par-dessus.
+
+## Vidéo d'introduction
+
+**Fournie au 4e retour et en ligne** : `public/video/mythe-1-afrique-pauvre.mp4`
+(« MYTHE 1 — L'AFRIQUE EST PAUVRE », renommé sans espaces ni apostrophe
+typographique, qui cassaient l'URL), valeur par défaut de
+`SITE_CONFIG.introVideo`, avec l'image d'attente `/images/intro-poster.webp`.
+`NEXT_PUBLIC_INTRO_VIDEO_SRC` / `_POSTER` restent prioritaires.
+
+- Placement : **entre le hero (02) et la section 03** (3e debrief ; le debrief
+  V1 la mettait entre le formulaire et la phrase finale).
+- `components/ui/IntroVideo.tsx` ne rend **rien** si `introVideo` vaut `null`
+  — pas de cadre vide.
+- Pas de lecture automatique, volontairement. Pendant la lecture, `SoundToggle`
+  met le fond sonore en pause en écoutant les événements de l'élément vidéo
+  (`duckedRef`, voir « Fond sonore ») — aucune liaison à câbler entre les deux.
 
 ## Fond sonore
 

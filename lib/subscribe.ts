@@ -47,6 +47,8 @@ export type SubscribeResult = { ok: true } | { ok: false; reason: string };
 export async function subscribeToCircle(fields: {
   name: string;
   email: string;
+  /** Téléphone / WhatsApp, demandé par la fenêtre « Rejoindre le mouvement » (V2). */
+  phone?: string;
   source?: string;
 }): Promise<SubscribeResult> {
   let response: Response;
@@ -57,6 +59,7 @@ export async function subscribeToCircle(fields: {
       body: JSON.stringify({
         name: fields.name,
         email: fields.email,
+        phone: fields.phone,
         source: fields.source ?? "site-v1",
       }),
     });

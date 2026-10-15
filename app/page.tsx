@@ -1,66 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import StarfieldBackground from "@/components/ui/StarfieldBackground";
-import GlobeBackground from "@/components/ui/GlobeBackground";
-import ReadingLight from "@/components/ui/ReadingLight";
-import Nav from "@/components/Nav";
-import ProgressIndicator from "@/components/ProgressIndicator";
-import Section00Loader from "@/components/sections/Section00Loader";
-import Section02Hero from "@/components/sections/Section02Hero";
-import IntroVideo from "@/components/ui/IntroVideo";
-import Section03Direction from "@/components/sections/Section03Direction";
-import Section04Observe from "@/components/sections/Section04Observe";
-import Section05Clues from "@/components/sections/Section05Clues";
-import Section06Circle from "@/components/sections/Section06Circle";
-import Section07Shift from "@/components/sections/Section07Shift";
-import Section08FlipCard from "@/components/sections/Section08FlipCard";
-import Section09Urgency from "@/components/sections/Section09Urgency";
-import RejoinCircle from "@/components/ui/RejoinCircle";
-import Section10Final from "@/components/sections/Section10Final";
-import Section11Footer from "@/components/sections/Section11Footer";
+import Header from "@/components/v2/Header";
+import Hero from "@/components/v2/Hero";
+import BookEvent from "@/components/v2/BookEvent";
+import QuoteBanner from "@/components/v2/QuoteBanner";
+import BookSection from "@/components/v2/BookSection";
+import AuthorSection from "@/components/v2/AuthorSection";
+import Excerpts from "@/components/v2/Excerpts";
+import Testimonials from "@/components/v2/Testimonials";
+import OrderSection from "@/components/v2/OrderSection";
+import News from "@/components/v2/News";
+import ContactSection from "@/components/v2/ContactSection";
+import Footer from "@/components/v2/Footer";
+import MovementModal from "@/components/v2/MovementModal";
 
+/**
+ * V2 — site officiel du livre (§2.3, §17), d'après la maquette Figma
+ * « Renversement V2 ». Même URL que la V1, qu'elle remplace au Jour J.
+ *
+ * Les sections suivent l'ordre de la maquette. La fenêtre « Rejoindre le
+ * mouvement » est ouverte depuis trois endroits (en-tête, livre événement,
+ * actualités), d'où son état porté ici.
+ */
 export default function Home() {
-  const [isLoaderDone, setIsLoaderDone] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const openJoin = () => setJoinOpen(true);
 
   return (
     <>
-      <StarfieldBackground />
-      <GlobeBackground />
-      <ReadingLight />
-
-      {!isLoaderDone && (
-        <Section00Loader onDone={() => setIsLoaderDone(true)} />
-      )}
-
-      <Nav />
-      <ProgressIndicator />
-
+      <Header onJoin={openJoin} />
       <main>
-        {/* L'animation d'entrée du hero ne démarre qu'une fois l'écran de
-            chargement levé : sans ça elle se jouait derrière l'overlay et
-            personne ne la voyait (cf. Section02Hero). */}
-        <Section02Hero start={isLoaderDone} />
-        {/* Emplacement de la vidéo (3e debrief). Ne rend rien tant que le
-            fichier n'est pas renseigné — voir components/ui/IntroVideo.tsx. */}
-        <IntroVideo />
-        <Section03Direction />
-        <Section04Observe />
-        <Section05Clues />
-        {/* Le formulaire est remonté ici au 5e retour client : juste après la
-            phrase « C'est peut-être un problème de clés. » qui ferme les
-            indices. Il fermait la page auparavant. */}
-        <Section06Circle />
-        <Section07Shift />
-        <Section08FlipCard />
-        <Section09Urgency />
-        {/* Sa place d'avant, occupée par un simple rappel vers #circle pour
-            qui n'a pas rempli le formulaire en chemin. */}
-        <RejoinCircle />
-        <Section10Final />
+        <Hero />
+        <BookEvent onJoin={openJoin} />
+        <QuoteBanner />
+        <BookSection />
+        <AuthorSection />
+        <Excerpts />
+        <Testimonials />
+        <OrderSection />
+        <News onJoin={openJoin} />
+        <ContactSection />
       </main>
-
-      <Section11Footer />
+      <Footer />
+      <MovementModal open={joinOpen} onClose={() => setJoinOpen(false)} />
     </>
   );
 }

@@ -26,8 +26,12 @@ const cormorantGaramond = Cormorant_Garamond({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: `${SITE_CONFIG.name} — ${SITE_CONFIG.tagline}`,
+  // V2 : la description du teaser (« Rejoignez le Cercle des premiers
+  // observateurs ») n'a plus de sens une fois le livre en vente. Celle-ci est
+  // assemblée à partir des textes de la maquette V2 (section « Le livre
+  // événement »), sans formulation nouvelle.
   description:
-    "Le monde regarde l'Afrique comme un continent à financer. Et si la réalité était exactement l'inverse ? Rejoignez le Cercle des premiers observateurs.",
+    "L'Afrique possède les ressources, les talents et les capitaux nécessaires à son développement. Dans RENVERSEMENT, Ismaël Adam Cissé propose une vision audacieuse et une feuille de route concrète pour mobiliser 1 000 milliards de dollars d'ici 2035.",
   // §22 : indexation immédiate ou noindex temporaire — à trancher avant mise en ligne.
   // Décommenter la ligne suivante si le site ne doit pas être indexé pendant le teasing :
   // robots: { index: false, follow: false },

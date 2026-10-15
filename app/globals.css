@@ -106,3 +106,18 @@ body {
     opacity: 0.6;
   }
 }
+
+/* ---------------------------------------------------------------------- */
+/* V2 — tracé du message de succès « Rejoindre le mouvement »             */
+/* Les formes portent pathLength="1" : une seule animation, quelle que    */
+/* soit leur longueur réelle. L'état de repos (offset 0) est le dessin    */
+/* complet, donc rien ne manque si l'animation ne joue pas.               */
+/* ---------------------------------------------------------------------- */
+@keyframes trace {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}

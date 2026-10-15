@@ -23,9 +23,9 @@ import { SITE_CONFIG, SITE_URL } from "@/config/site.config";
 
 // Or bronze du logo (cf. token `terracota`, tailwind.config.ts). En dur ici :
 // un e-mail n'a pas accès à Tailwind, et le HTML doit porter ses couleurs.
-const OR = "#B4742A";
+export const OR = "#B4742A";
 const NOIR = "#0A0A0A";
-const GRIS_CLAIR = "#E8E6E1";
+export const GRIS_CLAIR = "#E8E6E1";
 
 // PNG et non WebP : Outlook pour Windows ne sait toujours pas afficher le WebP,
 // et public/logo/ contient justement les deux formats.
@@ -45,7 +45,7 @@ export type BrevoEmailContent = {
  * les feuilles de style et ne connaissent pas la mise en page moderne. C'est
  * du HTML d'e-mail, volontairement archaïque.
  */
-function shell(body: string): string {
+export function shell(body: string): string {
   return `<!doctype html>
 <html lang="fr">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -141,6 +141,8 @@ ${SITE_CONFIG.name} — ${SITE_URL}`;
 export function buildNotificationEmail(fields: {
   name: string;
   email: string;
+  /** Saisi dans la fenêtre « Rejoindre le mouvement » (V2) ; vide en V1. */
+  phone?: string;
   source: string;
   date: string;
 }): BrevoEmailContent {
@@ -161,6 +163,7 @@ export function buildNotificationEmail(fields: {
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${ligne("Nom et prénom", fields.name)}
                 ${ligne("Adresse e-mail", fields.email)}
+                ${fields.phone ? ligne("Téléphone / WhatsApp", fields.phone) : ""}
                 ${ligne("Source", fields.source)}
                 ${ligne("Date", fields.date)}
               </table>
@@ -170,7 +173,7 @@ export function buildNotificationEmail(fields: {
   const textContent = `Nouvelle inscription au Cercle
 
 Nom et prénom : ${fields.name}
-Adresse e-mail : ${fields.email}
+Adresse e-mail : ${fields.email}${fields.phone ? `\nTéléphone / WhatsApp : ${fields.phone}` : ""}
 Source : ${fields.source}
 Date : ${fields.date}`;
 
@@ -186,7 +189,7 @@ Date : ${fields.date}`;
  * HTML, donc échappées. Sans cela, un nom contenant `<script>` partirait tel
  * quel dans la boîte du client.
  */
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

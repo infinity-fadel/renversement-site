@@ -48,98 +48,13 @@
 
 import { NextResponse } from "next/server";
 import { buildWelcomeEmail, buildNotificationEmail } from "@/lib/brevo-emails";
-
-const BREVO_API = "https://api.brevo.com/v3";
-
-// Au-delà, on abandonne et on laisse le navigateur repartir vers FormSubmit.
-// Sans ce garde-fou, une lenteur de Brevo bloquerait le visiteur jusqu'au
-// délai d'exécution de la fonction Vercel (10 s), bouton figé sur
-// « Inscription en cours… ».
-const TIMEOUT_MS = 8000;
-
-type Config = {
-  apiKey: string;
-  listId: number | null;
-  senderEmail: string;
-  senderName: string;
-  notificationEmail: string;
-  nameAttribute: string;
-  welcomeTemplateId: number | null;
-  notificationTemplateId: number | null;
-};
-
-function readConfig(): Config | null {
-  const apiKey = process.env.BREVO_API_KEY?.trim();
-  // Repli avec `||` et non `??` partout dans ce fichier : chez Vercel, une
-  // variable déclarée sans valeur arrive comme chaîne vide, pas comme
-  // `undefined` (même piège que dans config/site.config.ts).
-  if (!apiKey) return null;
-
-  // Défaut à 2 : c'est la liste du compte (« Votre première liste »), et ce
-  // n'est pas un secret. Même logique que SITE_DOMAIN, LAUNCH_DATE ou les
-  // identifiants de mesure d'audience — le déploiement se faisant au push
-  // sans configuration chez l'hébergeur, une valeur par défaut correcte évite
-  // que le site fonctionne « à moitié ». Vérifié le 17 septembre 2026 : sans
-  // ce défaut, une inscription en production créait bien le contact mais
-  // SANS liste, donc invisible pour l'envoi du 2 octobre.
-  const listId = Number.parseInt(
-    process.env.BREVO_LIST_ID?.trim() || "2",
-    10
-  );
-  const welcome = Number.parseInt(
-    process.env.BREVO_WELCOME_TEMPLATE_ID?.trim() || "",
-    10
-  );
-  const notif = Number.parseInt(
-    process.env.BREVO_NOTIFICATION_TEMPLATE_ID?.trim() || "",
-    10
-  );
-
-  return {
-    apiKey,
-    listId: Number.isFinite(listId) ? listId : null,
-    // L'expéditeur DOIT être un expéditeur vérifié dans le compte Brevo
-    // (Settings > Senders). Une adresse non vérifiée fait répondre 400.
-    senderEmail: process.env.BREVO_SENDER_EMAIL?.trim() || "contact@lerenversement.com",
-    senderName: process.env.BREVO_SENDER_NAME?.trim() || "RENVERSEMENT",
-    notificationEmail:
-      process.env.BREVO_NOTIFICATION_EMAIL?.trim() || "contact@lerenversement.com",
-    // Les comptes Brevo créés en français ont l'attribut NOM ; ceux créés en
-    // anglais ont LASTNAME. D'où le réglage, plutôt qu'une valeur en dur.
-    nameAttribute: process.env.BREVO_NAME_ATTRIBUTE?.trim() || "NOM",
-    welcomeTemplateId: Number.isFinite(welcome) ? welcome : null,
-    notificationTemplateId: Number.isFinite(notif) ? notif : null,
-  };
-}
-
-async function brevoFetch(
-  config: Config,
-  path: string,
-  body: unknown
-): Promise<{ status: number; payload: Record<string, unknown> | null; raw: string }> {
-  const response = await fetch(`${BREVO_API}${path}`, {
-    method: "POST",
-    headers: {
-      "api-key": config.apiKey,
-      "Content-Type": "application/json",
-      accept: "application/json",
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-
-  // Brevo répond en JSON, mais un 502 de passerelle renverrait du HTML que
-  // `response.json()` ferait échouer avec une erreur illisible. On lit en
-  // texte puis on parse, comme dans lib/formsubmit.ts.
-  const raw = await response.text();
-  let payload: Record<string, unknown> | null = null;
-  try {
-    payload = raw ? JSON.parse(raw) : null;
-  } catch {
-    /* réponse non-JSON — le code HTTP suffira à décider */
-  }
-  return { status: response.status, payload, raw };
-}
+// Configuration, délai et appel HTTP vivent désormais dans lib/brevo-server.ts,
+// partagé avec les routes de commande et de contact de la V2.
+import {
+  brevoFetch,
+  isPlausibleEmail,
+  readBrevoConfig as readConfig,
+} from "@/lib/brevo-server";
 
 export async function POST(request: Request) {
   const config = readConfig();
@@ -162,6 +77,9 @@ export async function POST(request: Request) {
   const name = String(body.name ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
   const source = String(body.source ?? "site-v1").trim();
+  // Facultatif : demandé par la fenêtre « Rejoindre le mouvement » de la V2,
+  // absent du formulaire du Cercle de la V1.
+  const phone = String(body.phone ?? "").trim().slice(0, 40);
   const honeypot = String(body.website ?? "").trim();
 
   // Champ-piège, re-contrôlé ici : le filtrage côté client (Section06Circle)
@@ -175,7 +93,7 @@ export async function POST(request: Request) {
   // Validation volontairement permissive : refuser des adresses valides mais
   // exotiques coûte plus cher qu'accepter une faute de frappe, que Brevo
   // rejettera de toute façon.
-  if (!name || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+  if (!name || !email || !isPlausibleEmail(email)) {
     return NextResponse.json({ ok: false, reason: "invalid" }, { status: 400 });
   }
 
@@ -186,7 +104,12 @@ export async function POST(request: Request) {
   try {
     contact = await brevoFetch(config, "/contacts", {
       email,
-      attributes: { [config.nameAttribute]: name },
+      attributes: {
+        [config.nameAttribute]: name,
+        // Seulement si l'attribut est configuré — cf. `phoneAttribute` dans
+        // lib/brevo-server.ts pour la raison de l'absence de défaut.
+        ...(phone && config.phoneAttribute ? { [config.phoneAttribute]: phone } : {}),
+      },
       listIds: config.listId ? [config.listId] : undefined,
       // `false` : on ne veut pas qu'une resoumission écrase silencieusement
       // les données d'un contact existant. Brevo répondra « duplicate », ce
@@ -270,7 +193,7 @@ export async function POST(request: Request) {
   // `allSettled` et non `all` : l'échec d'un envoi ne doit ni interrompre
   // l'autre, ni remonter au visiteur, qui est bel et bien inscrit.
   const welcome = buildWelcomeEmail(name);
-  const notification = buildNotificationEmail({ name, email, source, date });
+  const notification = buildNotificationEmail({ name, email, phone, source, date });
 
   const results = await Promise.allSettled([
     brevoFetch(config, "/smtp/email", {

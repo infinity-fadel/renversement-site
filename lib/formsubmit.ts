@@ -36,11 +36,17 @@ const ENDPOINT = `https://formsubmit.co/ajax/${FORMSUBMIT_TOKEN}`;
 
 export type SubscribeResult = { ok: true } | { ok: false; reason: string };
 
-export async function subscribeToCircle(fields: {
-  name: string;
-  email: string;
-  source?: string;
-}): Promise<SubscribeResult> {
+/**
+ * Envoi générique vers la boîte du client. Utilisé par l'inscription au Cercle
+ * ci-dessous et, depuis la V2, en secours des formulaires de commande et de
+ * contact (lib/submit-form.ts). `fields` devient le tableau du message :
+ * les clés servent d'intitulés, d'où leur forme lisible (« Nom », « E-mail »).
+ */
+export async function sendToFormSubmit(
+  subject: string,
+  fields: Record<string, string>,
+  logLabel = "Cercle"
+): Promise<SubscribeResult> {
   let response: Response;
   try {
     response = await fetch(ENDPOINT, {
@@ -50,12 +56,9 @@ export async function subscribeToCircle(fields: {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        Nom: fields.name,
-        "E-mail": fields.email,
-        Consentement: "Oui",
-        Source: fields.source ?? "site-v1",
+        ...fields,
         Date: new Date().toISOString(),
-        _subject: "RENVERSEMENT — nouvelle inscription au Cercle",
+        _subject: subject,
         _template: "table",
         // Le captcha de FormSubmit suppose l'affichage de SA page ; en mode
         // ajax personne ne le voit, donc personne ne le résout. Le champ-piège
@@ -85,7 +88,7 @@ export async function subscribeToCircle(fields: {
 
   if (!succeeded) {
     console.error(
-      "[Cercle] FormSubmit a refusé la soumission",
+      `[${logLabel}] FormSubmit a refusé la soumission`,
       response.status,
       payload?.message ?? raw.slice(0, 300)
     );
@@ -93,4 +96,19 @@ export async function subscribeToCircle(fields: {
   }
 
   return { ok: true };
+}
+
+export async function subscribeToCircle(fields: {
+  name: string;
+  email: string;
+  phone?: string;
+  source?: string;
+}): Promise<SubscribeResult> {
+  return sendToFormSubmit("RENVERSEMENT — nouvelle inscription au Cercle", {
+    Nom: fields.name,
+    "E-mail": fields.email,
+    ...(fields.phone ? { "Téléphone / WhatsApp": fields.phone } : {}),
+    Consentement: "Oui",
+    Source: fields.source ?? "site-v1",
+  });
 }

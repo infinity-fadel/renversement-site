@@ -20,6 +20,14 @@ const config: Config = {
         granite: "#ABC9C6",
         lavender: "#CACEE5",
         "desert-sand": "#E0C8A6",
+        // V2 (maquette Figma « Renversement V2 », styles « black » et
+        // « white 200 ») : le noir chaud des cartes et du pied de page, et le
+        // gris taupe des surtitres. L'or de la maquette (#B37220) n'a PAS de
+        // token propre : il est à un ou deux points de `terracota`, l'écart est
+        // invisible, on garde la couleur du logo.
+        ink: "#120F0E",
+        taupe: "#716D63",
+        "taupe-light": "#A09B8D",
       },
       fontFamily: {
         // Apollo = police de titre custom (fichier à fournir, cf. public/fonts/README.md)
