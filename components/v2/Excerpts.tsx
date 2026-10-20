@@ -1,4 +1,17 @@
-import { ANCHORS, EXCERPTS } from "@/config/v2.content";
+import { ANCHORS, EXCERPTS, type Excerpt } from "@/config/v2.content";
+
+function ExcerptCard({ excerpt }: { excerpt: Excerpt }) {
+  return (
+    <figure className="flex flex-col gap-6 bg-ink p-6">
+      <blockquote className="text-base italic leading-[1.4] text-light-grey">
+        <p>“{excerpt.quote}”</p>
+      </blockquote>
+      <figcaption className="text-base font-bold leading-[1.4] text-terracota">
+        {excerpt.source}
+      </figcaption>
+    </figure>
+  );
+}
 import { Container, Eyebrow, buttonClass } from "./ui";
 
 /**
@@ -22,19 +35,25 @@ export default function Excerpts() {
           <p className="text-lg tracking-[0.02em] sm:text-xl">{EXCERPTS.subtitle}</p>
         </div>
 
-        <div className="w-full columns-1 gap-6 sm:columns-2 lg:columns-4">
-          {EXCERPTS.items.map((excerpt) => (
-            <figure
-              key={excerpt.source + excerpt.quote.slice(0, 12)}
-              className="mb-6 flex break-inside-avoid flex-col gap-6 bg-ink p-6"
-            >
-              <blockquote className="text-base italic leading-[1.4] text-light-grey">
-                <p>“{excerpt.quote}”</p>
-              </blockquote>
-              <figcaption className="text-base font-bold leading-[1.4] text-terracota">
-                {excerpt.source}
-              </figcaption>
-            </figure>
+        {/* Grand écran : les quatre colonnes exactes de la maquette. */}
+        <div className="hidden w-full grid-cols-4 items-start gap-6 lg:grid">
+          {EXCERPTS.columns.map((column, c) => (
+            <div key={c} className="flex flex-col gap-6">
+              {column.map((excerpt, i) => (
+                <ExcerptCard key={i} excerpt={excerpt} />
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* En dessous : la même suite de cartes, réagencée en une ou deux
+            colonnes. `display: none` sur la variante inutilisée la retire
+            aussi de l'arbre d'accessibilité — pas de lecture en double. */}
+        <div className="w-full columns-1 gap-6 sm:columns-2 lg:hidden">
+          {EXCERPTS.columns.flat().map((excerpt, i) => (
+            <div key={i} className="mb-6 break-inside-avoid">
+              <ExcerptCard excerpt={excerpt} />
+            </div>
           ))}
         </div>
 

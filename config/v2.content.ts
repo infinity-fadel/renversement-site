@@ -46,6 +46,31 @@ export const BOOK = {
   unitPrice: 25000,
 };
 
+/**
+ * Vidéo de l'écran d'ouverture : « MYTHE 1 — L'AFRIQUE EST PAUVRE », la même
+ * que sur le site actuel (V1). Dans la maquette, l'écran d'ouverture (nœud
+ * `2:58`) n'exporte aucun calque : ce qu'on y voit est la première image de
+ * cette vidéo (« DEPUIS TOUJOURS, UNE… » et le monogramme).
+ *
+ * Versions réencodées depuis public/video/mythe-1-afrique-pauvre.mp4 (34 Mo,
+ * trop lourd pour une vidéo qui démarre seule) : 1080p à 7,6 Mo, 720p à
+ * 4,2 Mo pour les petits écrans. Commande utilisée, à rejouer si la source
+ * change :
+ *   ffmpeg -i source.mp4 -c:v libx264 -preset slow -crf 28 -profile:v high \
+ *     -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 128k ouverture-1080.mp4
+ *   ffmpeg -i source.mp4 -vf scale=-2:720 -c:v libx264 -preset slow -crf 26 \
+ *     -profile:v main -pix_fmt yuv420p -movflags +faststart -c:a aac -b:a 96k ouverture-720.mp4
+ */
+export const HERO_VIDEO = {
+  desktop: "/video/ouverture-1080.mp4",
+  mobile: "/video/ouverture-720.mp4",
+  /** Image d'attente : la première image de la vidéo (0,5 s). */
+  poster: "/v2/ouverture-poster.webp",
+  /** Libellés repris du bouton de son du site actuel (validés client). */
+  soundOn: "Activer le son",
+  soundOff: "Arrêter le son",
+};
+
 export const BOOK_EVENT = {
   eyebrow: "LE LIVRE ÉVÉNEMENT",
 };
@@ -90,39 +115,47 @@ export const AUTHOR = {
 
 export type Excerpt = { quote: string; source: string };
 
+// Les quatre citations distinctes de la maquette.
+const MILLIARDAIRE: Excerpt = {
+  quote:
+    "Imaginez un milliardaire qui mendie dans la rue. C’est exactement le portrait de l’Afrique contemporaine.",
+  source: "Introduction - Page 13",
+};
+const FINANCE_DEJA: Excerpt = {
+  quote: "L’Afrique finance déjà le monde - mais à son insu, et à perte",
+  source: "Introduction - Page 16",
+};
+const MAL_PERNICIEUX: Excerpt = {
+  quote: "L’Afrique souffre d’un mal plus pernicieux que la pauvreté : la croyance en sa propre pauvreté",
+  source: "Chapitre 1 - Page 35",
+};
+const ENJEU_POUVOIR: Excerpt = {
+  quote:
+    "Le véritable enjeu reste celui du pouvoir : un système où l’échec des programmes justifie leur propre continuation, dans une cercle vicieux où la dépendance d’aujourd’hui paie les dettes d’hier et justifie l’aide de demain",
+  source: "Chapitre 2 - Page 70",
+};
+
 export const EXCERPTS = {
   eyebrow: "EXTRAITS",
   title: "Dix passages pour commencer le RENVERSEMENT",
   subtitle: "Découvrez quelques idées fortes qui traversent l’ouvrage.",
-  // PROVISOIRE — la maquette annonce DIX passages mais n'en contient que
-  // quatre distincts, recopiés pour remplir les quatre colonnes. On n'affiche
-  // que les quatre réels plutôt que des doublons ; les six manquants sont à
-  // fournir par le client.
+  // Les dix cartes de la maquette, colonne par colonne, dans sa disposition
+  // décalée (nœuds `30:90`, `30:91`, `30:92`, `30:100`).
+  //
+  // PROVISOIRE — la maquette n'a que QUATRE citations distinctes, recopiées
+  // pour remplir les dix cartes. Les copies sont marquées « copie » : à
+  // remplacer par les six extraits manquants, à fournir par le client.
   //
   // Retouches : les espaces parasites après le guillemet ouvrant (« “ L’Afrique »)
   // ont été retirés, et les guillemets sont posés par le composant.
   // « dans une cercle vicieux » est conservé tel quel : c'est une citation du
   // livre, à vérifier sur l'ouvrage (« un cercle » attendu).
-  items: [
-    {
-      quote:
-        "Imaginez un milliardaire qui mendie dans la rue. C’est exactement le portrait de l’Afrique contemporaine.",
-      source: "Introduction - Page 13",
-    },
-    {
-      quote: "L’Afrique souffre d’un mal plus pernicieux que la pauvreté : la croyance en sa propre pauvreté",
-      source: "Chapitre 1 - Page 35",
-    },
-    {
-      quote: "L’Afrique finance déjà le monde - mais à son insu, et à perte",
-      source: "Introduction - Page 16",
-    },
-    {
-      quote:
-        "Le véritable enjeu reste celui du pouvoir : un système où l’échec des programmes justifie leur propre continuation, dans une cercle vicieux où la dépendance d’aujourd’hui paie les dettes d’hier et justifie l’aide de demain",
-      source: "Chapitre 2 - Page 70",
-    },
-  ] satisfies Excerpt[],
+  columns: [
+    [MILLIARDAIRE, FINANCE_DEJA, MAL_PERNICIEUX],
+    [/* copie */ MAL_PERNICIEUX, ENJEU_POUVOIR],
+    [/* copie */ MILLIARDAIRE, /* copie */ FINANCE_DEJA, /* copie */ MILLIARDAIRE],
+    [/* copie */ MAL_PERNICIEUX, /* copie */ ENJEU_POUVOIR],
+  ] satisfies Excerpt[][],
   // Retouche : la maquette porte « LIRE LA SUITE DANS REVERSEMENT », coquille
   // manifeste sur le nom du livre.
   cta: "LIRE LA SUITE DANS RENVERSEMENT",

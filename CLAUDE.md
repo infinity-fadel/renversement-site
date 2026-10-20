@@ -131,8 +131,8 @@ sur `main`. Bascule prévue : fusion de `v2` dans `main`.
   re-télécharger sans raison.
 - **Textes** : tous dans `config/v2.content.ts`, repris mot pour mot de la
   maquette. Chaque retouche y est commentée. Les contenus marqués
-  **PROVISOIRE** sont des remplissages de la maquette (extraits, revendeurs,
-  actualités, liens des réseaux, écran d'ouverture) : ils se remplacent là,
+  **PROVISOIRE** sont des remplissages de la maquette (6 des 10 extraits sont
+  des copies, revendeurs, actualités, liens des réseaux) : ils se remplacent là,
   sans toucher aux composants. Un lien `null` rend un bouton inactif, jamais un
   `href="#"`.
 - **Composants** : `components/v2/`, briques communes dans `ui.tsx`.
@@ -140,6 +140,13 @@ sur `main`. Bascule prévue : fusion de `v2` dans `main`.
   police de contenu de la charte ; les tailles ont été ajustées là où
   Montserrat, plus large, faisait passer un texte à la ligne (titre du livre,
   menu).
+- **Écran d'ouverture = la vidéo du site actuel.** Le cadre `2:58` de la
+  maquette n'exporte aucun calque ; le « DEPUIS » visible en capture est la
+  première image de `mythe-1-afrique-pauvre.mp4`. Lecture automatique muette
+  en boucle (autorisée pour `<video>`, contrairement à `<audio>`), boutons son
+  et pause. Fichiers réencodés `public/video/ouverture-{1080,720}.mp4`
+  (7,6 et 4,2 Mo contre 34 Mo) — commandes ffmpeg dans `HERO_VIDEO`
+  (`config/v2.content.ts`).
 - **Animations** : `hooks/useArmedReveal.ts`. Même règle que la V1 — le HTML
   servi est l'état final ; l'état de départ n'est posé qu'au montage, et
   seulement pour un élément encore sous la ligne de flottaison.
